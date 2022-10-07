@@ -7,6 +7,7 @@ void Wheels::go() {
   digitalWrite(pin_left_fw, HIGH);
   digitalWrite(pin_right_fw, HIGH);
   analogWrite(pin_motor_speed, speed);
+  analogWrite(pin_motor_speed2, speed);
 }
 
 void Wheels::stop() {
@@ -16,6 +17,7 @@ void Wheels::stop() {
   digitalWrite(pin_left_fw, LOW);
   digitalWrite(pin_right_fw, LOW);
   analogWrite(pin_motor_speed, 0);
+  analogWrite(pin_motor_speed2, 0);
 }
 
 void Wheels::reverse() {
@@ -25,6 +27,7 @@ void Wheels::reverse() {
   digitalWrite(pin_left_bw, HIGH);
   digitalWrite(pin_right_bw, HIGH);
   analogWrite(pin_motor_speed, speed);
+  analogWrite(pin_motor_speed2, 0);
 }
 
 void Wheels::turn_right() {
@@ -33,6 +36,7 @@ void Wheels::turn_right() {
   digitalWrite(pin_right_bw, HIGH);
   digitalWrite(pin_left_fw, HIGH);
   analogWrite(pin_motor_speed, SLOW);
+  analogWrite(pin_motor_speed2, SLOW);
 }
 
 void Wheels::turn_left() {
@@ -41,6 +45,7 @@ void Wheels::turn_left() {
   digitalWrite(pin_left_bw, HIGH);
   digitalWrite(pin_right_fw, HIGH);
   analogWrite(pin_motor_speed, SLOW);
+  analogWrite(pin_motor_speed2, SLOW);
 }
 
 void Wheels::set_speed(byte new_speed) {

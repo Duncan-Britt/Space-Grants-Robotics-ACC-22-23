@@ -15,9 +15,10 @@ void setup() {
 #define PIN_RIGHT_FW 7
 #define PIN_RIGHT_BW 8
 #define PIN_WHEELS_SPEED 3
+#define PIN_WHEELS_SPEED2 5
 
 void loop() {
-  static const Wheels wheels(PIN_LEFT_FW, PIN_LEFT_BW, PIN_RIGHT_FW, PIN_RIGHT_BW, PIN_WHEELS_SPEED);
+  static const Wheels wheels(PIN_LEFT_FW, PIN_LEFT_BW, PIN_RIGHT_FW, PIN_RIGHT_BW, PIN_WHEELS_SPEED, PIN_WHEELS_SPEED2);
   // Test script {
   wheels.go();
   delay(3000);
