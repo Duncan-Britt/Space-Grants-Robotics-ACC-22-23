@@ -1,5 +1,9 @@
 #include "wheels.h"
-#include <SharpIR.h>
+#include <SharpIR.h> // https://www.makerguides.com/sharp-gp2y0a21yk0f-ir-distance-sensor-arduino-tutorial/
+
+// Define model and input pin:
+#define IRPin A0
+#define model 1080
 
 #define PIN_LEFT_FW 8
 #define PIN_LEFT_BW 9
@@ -11,22 +15,36 @@
 void setup() {
   Serial.begin(9600); // Needed to print to Serial Monitor.
 
-  pinMode(PIN_LEFT_FW, OUTPUT);
-  pinMode(PIN_LEFT_BW, OUTPUT);
-  pinMode(PIN_RIGHT_FW, OUTPUT);
-  pinMode(PIN_RIGHT_BW, OUTPUT);
-  pinMode(PIN_WHEELS_SPEED, OUTPUT);
-  pinMode(PIN_WHEELS_SPEED2, OUTPUT);
+  // pinMode(PIN_LEFT_FW, OUTPUT);
+  // pinMode(PIN_LEFT_BW, OUTPUT);
+  // pinMode(PIN_RIGHT_FW, OUTPUT);
+  // pinMode(PIN_RIGHT_BW, OUTPUT);
+  // pinMode(PIN_WHEELS_SPEED, OUTPUT);
+  // pinMode(PIN_WHEELS_SPEED2, OUTPUT);
 }
 
+int distance_cm;
+// Create a new instance of the SharpIR class:
+SharpIR mySensor = SharpIR(IRPin, model);
+
 void loop() {
-  digitalWrite(PIN_LEFT_BW, LOW);
-  digitalWrite(PIN_RIGHT_BW, LOW);
-  digitalWrite(PIN_LEFT_FW, HIGH);
-  digitalWrite(PIN_RIGHT_FW, HIGH);
-  analogWrite(PIN_WHEELS_SPEED, 255);
-  analogWrite(PIN_WHEELS_SPEED2, 255);
-  delay(3000);
+  // digitalWrite(PIN_LEFT_BW, LOW);
+  // digitalWrite(PIN_RIGHT_BW, LOW);
+  // digitalWrite(PIN_LEFT_FW, HIGH);
+  // digitalWrite(PIN_RIGHT_FW, HIGH);
+  // analogWrite(PIN_WHEELS_SPEED, 255);
+  // analogWrite(PIN_WHEELS_SPEED2, 255);
+  // delay(3000);
+
+    // Get a distance measurement and store it as distance_cm:
+  distance_cm = mySensor.distance();
+
+  // Print the measured distance to the serial monitor:
+  Serial.print("Mean distance: ");
+  Serial.print(distance_cm);
+  Serial.println(" cm");
+
+  delay(1000);
 
   // static const Wheels wheels(PIN_LEFT_FW, PIN_LEFT_BW, PIN_RIGHT_FW, PIN_RIGHT_BW, PIN_WHEELS_SPEED, PIN_WHEELS_SPEED2);
   // // Test script {
