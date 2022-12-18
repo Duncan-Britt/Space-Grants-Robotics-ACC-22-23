@@ -1,5 +1,9 @@
 #include "wheels.h"
 #include <SharpIR.h> // https://www.makerguides.com/sharp-gp2y0a21yk0f-ir-distance-sensor-arduino-tutorial/
+#include <Geometry.h> // https://github.com/tomstewart89/Geometry => Example use: https://github.com/tomstewart89/Geometry/blob/master/examples/HowToUse/HowToUse.ino
+
+using namespace Geometry;
+using namespace BLA;
 
 // Define model and input pin:
 #define IRPin A0
@@ -15,6 +19,8 @@
 void setup() {
   Serial.begin(9600); // Needed to print to Serial Monitor.
 
+  Translation p_drone = {1.5, 0, 0.5};
+  Serial << "distance from drone to ground station: " << Norm(p_drone) << "\n";
   // pinMode(PIN_LEFT_FW, OUTPUT);
   // pinMode(PIN_LEFT_BW, OUTPUT);
   // pinMode(PIN_RIGHT_FW, OUTPUT);
@@ -28,6 +34,9 @@ int distance_cm;
 SharpIR mySensor = SharpIR(IRPin, model);
 
 void loop() {
+  Serial.println(millis());
+  // Serial << millis() << "\n";
+  delay(1000);
   // digitalWrite(PIN_LEFT_BW, LOW);
   // digitalWrite(PIN_RIGHT_BW, LOW);
   // digitalWrite(PIN_LEFT_FW, HIGH);
@@ -36,15 +45,15 @@ void loop() {
   // analogWrite(PIN_WHEELS_SPEED2, 255);
   // delay(3000);
 
-    // Get a distance measurement and store it as distance_cm:
-  distance_cm = mySensor.distance();
+  //   // Get a distance measurement and store it as distance_cm:
+  // distance_cm = mySensor.distance();
 
-  // Print the measured distance to the serial monitor:
-  Serial.print("Mean distance: ");
-  Serial.print(distance_cm);
-  Serial.println(" cm");
+  // // Print the measured distance to the serial monitor:
+  // Serial.print("Mean distance: ");
+  // Serial.print(distance_cm);
+  // Serial.println(" cm");
 
-  delay(1000);
+  // delay(1000);
 
   // static const Wheels wheels(PIN_LEFT_FW, PIN_LEFT_BW, PIN_RIGHT_FW, PIN_RIGHT_BW, PIN_WHEELS_SPEED, PIN_WHEELS_SPEED2);
   // // Test script {
