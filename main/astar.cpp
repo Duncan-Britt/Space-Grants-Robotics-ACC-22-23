@@ -135,7 +135,7 @@ typedef struct Node {
     unsigned int grid_idx;
     Node* parent;
     unsigned gCost;
-    unsigned hCost;
+    unsigned hCost; // NOTE: Once max cols and rows are determined, the bits used for this can be restricted
     bool operator<(Node o) {
         return (gCost + hCost) < (o.gCost + o.hCost);
     }
@@ -260,18 +260,18 @@ Err grid_find_path(const Grid* grid, const unsigned int start, const unsigned in
 
     const size_t pq_max_size = 80; // EXAMINE THIS
     const size_t explored_max_size = pq_max_size; // AND THIS!
-    Node* pq = (Node*) malloc(pq_max_size*sizeof(Node));    
+    Node* pq = (Node*) malloc(pq_max_size * sizeof(Node));    
     pq[0].grid_idx = dest;
     pq[0].parent = NULL;
     pq[0].gCost = 0;
     pq[0].hCost = grid_distance(grid, dest, start);
     size_t pq_size = 1;
     
-    Node* explored = (Node*) malloc(explored_max_size*sizeof(Node)); 
+    Node* explored = (Node*) malloc(explored_max_size * sizeof(Node)); 
     size_t explored_size = 0;
 
     while (pq_size != 0) {
-        pq_dequeue(pq, &pq_size, explored+explored_size);
+        pq_dequeue(pq, &pq_size, explored + explored_size);
         explored_size++;
         
         for (char i = 0; i < 8; ++i) {
@@ -280,13 +280,13 @@ Err grid_find_path(const Grid* grid, const unsigned int start, const unsigned in
             if (explored[explored_size-1].grid_idx % grid->cols == grid->rows - 1 && (i <= 1 || i == 7)) continue; // last column
             if (explored[explored_size-1].grid_idx / grid->cols == grid->rows - 1 && (i <= 3 && i >= 1)) continue; // last row
         
-            size_t neighbor_idx = explored[explored_size-1].grid_idx + neighbors[i];            
+            size_t neighbor_idx = explored[explored_size - 1].grid_idx + neighbors[i];            
             if (grid_obstacle_at(grid, neighbor_idx)) continue;            
 
             if (neighbor_idx == start) { // this isn't necessarily the shortest, but good enough                
                 path[0] = neighbor_idx;                
                 (*path_size)++;
-                Node* node_ptr = explored+(explored_size-1);
+                Node* node_ptr = explored + (explored_size - 1);
                 for (int i = 1; node_ptr != NULL && *path_size < max_path_size; ++i) {
                     path[i] = node_ptr->grid_idx;                    
                     node_ptr = node_ptr->parent;
