@@ -6,9 +6,16 @@
 // Sets pinMode for motor control pins to OUTPUT
 void motors_init_pins();
 
-// The following functions can be used to control the velocity of one of the wheels.
+// Increment (or decrement if argument is negative) the speed of the motors.
+void motors_increment_velocity_left(const char increment);
+void motors_increment_velocity_right(const char increment);
+
+// The following 4 functions can be used to control the velocity of one of the wheels.
 // They accept an integer in the range [-100, 100]. Negative values are used to
-// set the motor in reverse.
+// set the motor in reverse. An integer outside of the range [-100, 100] will be
+// changed to 100 or -100, whichever is closer.
+// 
+// These function update the values of current_velocity_[left or right]_[front or back]
 //
 // Low voltages can produce no movement, so the actual voltages applied to
 // the motors are abstracted away. The intent is that a velocity of 1 should
@@ -32,11 +39,9 @@ void motors_set_velocity_right_back(const char velocity);
 void motors_set_velocity(const char velocity);
 
 // Convenience function to set the velocity of both left motors.
-// May be unnecessary, could be removed if unused
 void motors_set_velocity_left(const char velocity);
 
 // Convenience function to set the velocity of both right motors simultaneously.
-// May be unnecessary, could be removed if unused
 void motors_set_velocity_right(const char velocity);
 
 #endif

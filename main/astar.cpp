@@ -1,5 +1,46 @@
 #include "astar.h"
 
+typedef struct Node {
+    unsigned int grid_idx;
+    Node* parent;
+    unsigned gCost;
+    unsigned hCost; // NOTE: Once max cols and rows are determined, the bits used for this can be restricted
+    bool operator<(Node o) {
+        return (gCost + hCost) < (o.gCost + o.hCost);
+    }
+    bool operator>(Node o) {
+        return (gCost + hCost) > (o.gCost + o.hCost);
+    }
+} Node;
+
+//  _   _  _          _      ___ ___  _        __   
+// | \ |_ /  |   /\  |_)  /\  |   |  / \ |\ | (_  o 
+// |_/ |_ \_ |_ /--\ | \ /--\ |  _|_ \_/ | \| __) o
+
+// ___     ___ _  _                  _           _ ___ ___  _        __ 
+//  |  |\ | | |_ |_) |\ |  /\  |    |_ | | |\ | /   |   |  / \ |\ | (_  
+// _|_ | \| | |_ | \ | \| /--\ |_   |  |_| | \| \_  |  _|_ \_/ | \| __) 
+
+// void printBits(size_t const size, void const * const ptr);
+int pq_parent(int i);
+int pq_left_child(int i);
+int pq_right_child(int i);
+void pq_shift_down(Node* pq, const size_t size, const unsigned int i);
+void node_copy(Node* orig, Node* cpy);
+void pq_dequeue(Node* pq, size_t* size, Node* result);
+void pq_shift_up(Node* pq, int i);
+void node_print(Node* node);
+void pq_print(Node* pq, size_t size);
+    
+//  _   _  _ ___      ___ ___ ___  _        __   
+// | \ |_ |_  |  |\ |  |   |   |  / \ |\ | (_  o 
+// |_/ |_ |  _|_ | \| _|_  |  _|_ \_/ | \| __) o
+
+// ___     ___ _  _                  _           _ ___ ___  _        __ 
+//  |  |\ | | |_ |_) |\ |  /\  |    |_ | | |\ | /   |   |  / \ |\ | (_  
+// _|_ | \| | |_ | \ | \| /--\ |_   |  |_| | \| \_  |  _|_ \_/ | \| __)  
+
+
 void printBits(size_t const size, void const * const ptr)
 {
     unsigned char *b = (unsigned char*) ptr;
@@ -15,9 +56,97 @@ void printBits(size_t const size, void const * const ptr)
     puts("");
 }
 
-unsigned char grid_obstacle_at(const Grid* grid, size_t idx)
+int pq_parent(int i)
 {
-    const unsigned char bit_idx = (idx % 8);
+    return (i - 1) / 2;
+}
+
+int pq_left_child(int i)
+{
+    return (2 * i) + 1;
+}
+
+int pq_right_child(int i)
+{
+    return (2 * i) + 2;
+}
+
+void pq_shift_down(Node* pq, const size_t size, const unsigned int i)
+{
+    unsigned int minIndex = i;
+    unsigned int l = pq_left_child(i);
+    
+    if (l < size && pq[l] < pq[minIndex]) {
+        minIndex = l;
+    }
+
+    unsigned int r = pq_right_child(i);
+
+    if (r < size && pq[r] < pq[minIndex]) {
+        minIndex = r;
+    }
+
+    if (i != minIndex) {
+        Node temp = pq[i];
+        pq[i] = pq[minIndex];
+        pq[minIndex] = temp;
+
+        pq_shift_down(pq, size, minIndex);
+    }
+}
+
+void node_copy(Node* orig, Node* cpy)
+{
+    cpy->grid_idx = orig->grid_idx;
+    cpy->parent = orig->parent;
+    cpy->gCost = orig->gCost;
+    cpy->hCost = orig->hCost;
+}
+
+void pq_dequeue(Node* pq, size_t* size, Node* result)
+{
+    node_copy(pq, result);    
+    pq[0] = pq[(*size)-1];
+    (*size)--;
+    pq_shift_down(pq, *size, 0);
+}
+
+void pq_shift_up(Node* pq, int i)
+{
+    while (i > 0 && pq[pq_parent(i)] > pq[i]) {
+        int parent_i = pq_parent(i);
+        Node temp = pq[i];
+        pq[i] = pq[parent_i];
+        pq[parent_i] = temp;
+
+        i = parent_i;
+    }
+}
+
+void node_print(Node* node)
+{
+    // printf("[gC:%u gI:%u]", node->gCost, node->grid_idx);
+    Serial.println("node_print needs to be reimplemented");
+}
+
+void pq_print(Node* pq, size_t size)
+{
+    // printf("pq: ");
+    // for (size_t i = 0; i < size; ++i) {
+    //     node_print(pq+i);
+    // }
+    // printf("\n");
+    Serial.println("pq_print needs to be reimplemented");
+}
+
+
+//  _       _     ___  _         _ ___ 
+// |_) | | |_) |   |  /     /\  |_) |  
+// |   |_| |_) |_ _|_ \_   /--\ |  _|_ 
+
+bool grid_obstacle_at(const Grid* grid, size_t idx)
+{
+    const uint8_t bit_idx = (idx % 8);
     const size_t byte_idx = idx / 8;
     return (grid->obstacles[byte_idx] & (1 << bit_idx)) >> bit_idx;
 }
@@ -131,19 +260,6 @@ Err grid_init_str(char* s, Grid* grid)
     return 0;
 }
 
-typedef struct Node {
-    unsigned int grid_idx;
-    Node* parent;
-    unsigned gCost;
-    unsigned hCost; // NOTE: Once max cols and rows are determined, the bits used for this can be restricted
-    bool operator<(Node o) {
-        return (gCost + hCost) < (o.gCost + o.hCost);
-    }
-    bool operator>(Node o) {
-        return (gCost + hCost) > (o.gCost + o.hCost);
-    }
-} Node;
-
 void grid_idx_to_cartesian(const Grid* grid, const unsigned int i, int* x, int* y)
 {
     *x = i % grid->cols;
@@ -162,88 +278,6 @@ unsigned grid_distance(const Grid* grid, const unsigned int i, const unsigned in
     return round(10 * sqrt(pow((float)abs(jy - iy), 2) + pow((float)abs(jx - ix), 2)));    
 }
 
-int pq_parent(int i)
-{
-    return (i - 1) / 2;
-}
-
-int pq_left_child(int i)
-{
-    return (2 * i) + 1;
-}
-
-int pq_right_child(int i)
-{
-    return (2 * i) + 2;
-}
-
-void pq_shift_down(Node* pq, const size_t size, const unsigned int i)
-{
-    unsigned int minIndex = i;
-    unsigned int l = pq_left_child(i);
-    
-    if (l < size && pq[l] < pq[minIndex]) {
-        minIndex = l;
-    }
-
-    unsigned int r = pq_right_child(i);
-
-    if (r < size && pq[r] < pq[minIndex]) {
-        minIndex = r;
-    }
-
-    if (i != minIndex) {
-        Node temp = pq[i];
-        pq[i] = pq[minIndex];
-        pq[minIndex] = temp;
-
-        pq_shift_down(pq, size, minIndex);
-    }
-}
-
-void node_copy(Node* orig, Node* cpy)
-{
-    cpy->grid_idx = orig->grid_idx;
-    cpy->parent = orig->parent;
-    cpy->gCost = orig->gCost;
-    cpy->hCost = orig->hCost;
-}
-
-void pq_dequeue(Node* pq, size_t* size, Node* result)
-{
-    node_copy(pq, result);    
-    pq[0] = pq[(*size)-1];
-    (*size)--;
-    pq_shift_down(pq, *size, 0);
-}
-
-void pq_shift_up(Node* pq, int i)
-{
-    while (i > 0 && pq[pq_parent(i)] > pq[i]) {
-        int parent_i = pq_parent(i);
-        Node temp = pq[i];
-        pq[i] = pq[parent_i];
-        pq[parent_i] = temp;
-
-        i = parent_i;
-    }
-}
-
-void node_print(Node* node)
-{
-    // printf("[gC:%u gI:%u]", node->gCost, node->grid_idx);
-    Serial.println("node_print needs to be reimplemented");
-}
-
-void pq_print(Node* pq, size_t size)
-{
-    // printf("pq: ");
-    // for (size_t i = 0; i < size; ++i) {
-    //     node_print(pq+i);
-    // }
-    // printf("\n");
-    Serial.println("pq_print needs to be reimplemented");
-}
 
 Err grid_find_path(const Grid* grid, const unsigned int start, const unsigned int dest, unsigned int* path, unsigned char* path_size, const unsigned char max_path_size)
 {
@@ -260,14 +294,15 @@ Err grid_find_path(const Grid* grid, const unsigned int start, const unsigned in
 
     const size_t pq_max_size = 80; // EXAMINE THIS
     const size_t explored_max_size = pq_max_size; // AND THIS!
-    Node* pq = (Node*) malloc(pq_max_size * sizeof(Node));    
+
+    Node pq[pq_max_size];
     pq[0].grid_idx = dest;
     pq[0].parent = NULL;
     pq[0].gCost = 0;
     pq[0].hCost = grid_distance(grid, dest, start);
     size_t pq_size = 1;
     
-    Node* explored = (Node*) malloc(explored_max_size * sizeof(Node)); 
+    Node explored[explored_max_size];
     size_t explored_size = 0;
 
     while (pq_size != 0) {
@@ -292,14 +327,10 @@ Err grid_find_path(const Grid* grid, const unsigned int start, const unsigned in
                     node_ptr = node_ptr->parent;
                     (*path_size)++;
                     if (*path_size == max_path_size && node_ptr != NULL) {
-                        free(pq);
-                        free(explored);
                         return -1;
                     }
                 }                
 
-                free(pq);
-                free(explored);
                 return 0;
             }
 
@@ -335,7 +366,5 @@ Err grid_find_path(const Grid* grid, const unsigned int start, const unsigned in
         }
     }
     
-    free(pq);
-    free(explored);
     return 1;
 }
