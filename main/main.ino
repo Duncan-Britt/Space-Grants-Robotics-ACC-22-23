@@ -36,9 +36,9 @@
 
 // astar.h & astar.cpp 
 // ===================
-// Defines an interface for plotting a course through a cartesian grid containing open and blocked off spaces
-// using the A* (star) path finding algorithm. Some work needs to be done to translate between traditional 
-// coordinates and the grid defined in these files.
+// Defines an interface for plotting a path forward and avoiding obstacles. The territory is represented as
+// an occupancy grid. The A* (star) path finding algorithm is used to search for the shortest path to the
+// target destination.
 
 // motors.h & motors.cpp
 // =====================
@@ -87,13 +87,80 @@ bool time_elapsed_ms_50() {
     return false; 
 }
 
+// radians
+#define THRESHOLD_MINOR_ROT 0.03
+bool pose_achieved_minor()
+{ 
+    switch (idx_pose_array_minor) {
+    case 0:
+      // To transition to the first minor pose, the robot only need rotate. Therefore, to confirm that it has achieved its goal,
+      // we simply ask wether the discrepancy is within a certain threshold.
+        return abs(pose_current.rotation - pose_array_minor->rotation) < THRESHOLD_MINOR_ROT;
+    case 1:
+      // And now for the tricky bit
+      // When the robot attempts to maintain its orientation and move straight ahead, to the second minor pose,
+      // it may do so imperfectly. It may veer off course some what if it fails to keep totally straight.
+      // We need a way to tell whether the robot has gone far enough in the direction of the last minor pose
+      // without considering whether it ends up close to the desired destination, in case it has veered off course.
+      // Vectors a & b describe the position of the robot at the first and second poses.      
+        Vec2D* a = (Vec2D*) pose_array_minor;
+        Vec2D* b = (Vec2D*) (pose_array_minor + 1);
+      // Imagine a line going from a to b. Now imagine a line perpendicular to that line passing through b, called f(x).
+      // We might ask whether the robot and point a are on opposite sides of this line and say that if so, it has gone far enough.
+
+        // slope of line from a to b:
+        double m = (double)(b->y - a->y) / (double)(b->x - a->x);
+        m = (m == 0) ? 0.01 : 0; // TO PREVENT DIVIDE BY 0 ERROR
+        // f(x) describes a line perpendicular to a line between the points a & b, passing through b;
+        auto f = [b, m](double x) -> double { return (double)b->y - (x - (double)b->x) / m; };
+
+      // But there's a problem: If the robot goes just up to the line and stops just before crossing it, such that it's at
+      // the right pose, we would never know that the robot has gone far enough, and the robot would just sit there.
+      // To account for this, we want some leeway. Instead of using f(x) which passes through b, we want to use a line
+      // parallel to f(x) that's a little bit closer to a.
+
+      // An effort was made to arrive at an exact answer: https://www.desmos.com/calculator/rglopobck7
+      // If you move the sliders, you'll notce g(x) disappears, meaning there's no real solution.
+
+      // Instead, I think this approximation will be good enough: => https://www.desmos.com/calculator/cwspo2d80p
+      // and faster to compute!
+
+        const double k = 5.0; // (cm) THIS CONSTANT IS SOMEWHAT ARBITRARY AND SHOULD BE TUNED.
+        if (m > -0.5) {
+            // g(x) = f(x + k) - k
+            auto g = [f, k](double x) -> double { return f(x + k) - k; };
+            // (yc > g(xc)) != (ya > g(xa))
+            return ((double)pose_current.translation.y > g(pose_current.translation.x)) != ((double)a->y > g(a->x));
+        }
+        else {
+            // g(x) = f(x) + k
+            auto g = [f, k](double x) -> double { return f(x) + k; };
+            // (yc > g(xc)) != (ya > g(xa))
+            return ((double)pose_current.translation.y > g(pose_current.translation.x)) != ((double)a->y > g(a->x));            
+        }       
+    case 2:
+      // To transition to the third minor pose from the second, the robot only need rotate. Therefore, to confirm that it has 
+      // achieved its goal, we simply ask wether the discrepancy is within a certain threshold.
+        return abs(pose_current.rotation - (pose_array_minor + 2)->rotation) < THRESHOLD_MINOR_ROT;        
+    }    
+}
+
+bool pose_achieved_major()
+{ // returns true if pose_current is close enough to the next goal pose (pose_queue_major.front()).
+    return pose_achieved_minor() && idx_pose_array_minor == 2;
+}
+
 //  ___       _        
 //   |  _    | \  _  o 
 //   | (_)   |_/ (_) o 
 
-// Figure out how to translate between poses in the global and local reference frame
+// Tests!
 
-// Need a function to find the discrepancy between to angles. (Consider 2π - 0, and similar).
+// Figure out how to translate between poses in the global and local reference frame
+// Figure out the dimensions of the occupancy grid and the cells within which can be used to represent
+// the surroundings.  Look in "astar.h".
+
+// Need a function to find the discrepancy between 2 angles. (Consider 2π - 0, and similar).
 
 // Implement a function which, given a grid and path on the grid, removes the unnecessary path nodes.
 // This is to say, if a series of nodes on the path are along a straight line, only the ends of the line
@@ -118,24 +185,26 @@ void reroute() {}
 // and the grid in astar.h. Doing so requires choosing how the grid should be scaled to represent space, deciding a pose for the grid,
 // and then initializing the grid based on the best knowledge of where obstacles exist.
 
-bool pose_next_achieved_major() {}
-// returns true if pose_current is closed enough to the next goal pose (pose_queue_major.front()).
-
-bool pose_next_achieved_minor() {}
-// returns true if pose_current is close enought to the next minor pose:
-// (pose_array_minor[idx_pose_array_minor])
-
 void pose_current_update() {}
-// Estimate the current position and orientation of the robot based on the latest sensor data.
+// Use a combination of 
+// - Positioning beacon system
+// - gyroscope,
+// - kinematic model based odometry (wheel encoders)
+// - compass
+// - ???
+// to ascertain the location and orientation of the robot.
+// https://www.youtube.com/watch?v=ZW7T6EFyYnc
 // Modify pose_current accordingly.
 
 void update_sensor_data() {}
 // Query the sensors on the robot. Set global variables associated with sensor data according to the latest reading.
 
 char pid_error_rotational(double rot_current, double rot_desired) {}
-// ^^^ be careful of the difference in rotation (consider that the discrepancy between 2π and 0 should be 0, not 2π).
+// ^^^ be careful of the difference in rotation (consider that the discrepancy between 7π/4 and 0 should be π/4, not 7π/4).
 char pid_error_translational(Vec2D pos_current, Vec2D pos_desired) {}
 // https://en.wikipedia.org/wiki/PID_controller
+// https://www.youtube.com/watch?v=UR0hOmjaHp0
+// https://www.youtube.com/watch?v=337Sp3PtVDc
 // these return a number representing the magnitude and direction (+-) of the corrective measures needed to be taken
 // to rectify the discrepancy between the desired pose and the current pose (pose_current).
 // Should fall in the range [-100, 100]
@@ -195,9 +264,9 @@ void setup()
         .then(update_state);
 
     loop_poses_major
-        .when(pose_next_achieved_major)
+        .when(pose_achieved_major)
         .then([pose_current, pose_queue_major, pose_array_minor]() -> void { // Enqueue minor poses, dequeue major pose.
-                if (!pose_queue_major.empty()) {
+                if (!(pose_queue_major.empty())) {
                     Pose_enqueue_transition(&pose_current, pose_queue_major.front(), pose_array_minor);
                     idx_pose_array_minor = 0;
                     pose_queue_major.dequeue();
@@ -207,18 +276,18 @@ void setup()
     // In between two poses in the pose_queue_major, there are minor poses
     // which must be traversed
     loop_poses_minor
-        .when(pose_next_achieved_minor)
+        .when(pose_achieved_minor)
         .then([pose_array_minor]() -> void { // dequeue minor pose
-                if (idx_pose_array_minor < 2) {
-                    ++idx_pose_array_minor;
-                }
-            });
+            if (idx_pose_array_minor < 2) {
+                ++idx_pose_array_minor;
+            }
+        });
 
     loop_obstacle
         .when(obstacle_detected)
         .then(stop)
         .when([pose_queue_major, pose_array_minor]() -> bool {
-            return idx_pose_array_minor == 2 && pose_next_achieved_minor();
+            return idx_pose_array_minor == 2 && pose_achieved_minor();
         })
         .then(reroute);
 

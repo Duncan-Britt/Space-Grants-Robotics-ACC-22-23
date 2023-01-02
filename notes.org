@@ -1,4 +1,15 @@
 
+* Odometry
+https://www.youtube.com/watch?v=ZW7T6EFyYnc
+Forward motion is the average of left and right wheels motion
+$$ fwd = \frac{left + right}{2} $$
+
+$$ \theta = \frac{right - left}{2r} $$
+(r = the radius of the robot -> the distance between the center and the wheels.)
+
+ 
+
+
 * TODO Path planning
 I wrote an implementation of the A* algorithm. This is memory intensive, and that's a problem. Also, it may be unnecessary. The obstacles that bowswer will face aren't likely to lead bowser to serious elaborate dead ends. It should be sufficient to tell Bowser to just head in the right general direction
 and avoid obstacles.

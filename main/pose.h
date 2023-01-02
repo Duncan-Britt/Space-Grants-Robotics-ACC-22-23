@@ -9,6 +9,7 @@ typedef struct Vec2D {
     bool operator==(const Vec2D& other) { return x == other.x && y == other.y; }
 } Vec2D;
 
+// DO NOT CHANGE THE ORDER OF THE STRUCT MEMBERS
 typedef struct Pose {
     Vec2D translation;
     double rotation; // radians in range [0, 2π]

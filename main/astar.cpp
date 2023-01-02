@@ -216,7 +216,7 @@ Err grid_init_str(char* s, Grid* grid)
         }
     }
     grid->rows++;
-    size_t grid_size = (grid->cols * grid->rows * sizeof(char)) / 8;
+    size_t grid_size = (grid->cols * grid->rows * sizeof(char)) / 8 + 1;
     grid->obstacles = (char*) malloc(grid_size);
     for (size_t i = 0; i < grid_size; ++i) {
         grid->obstacles[i] = 0;
