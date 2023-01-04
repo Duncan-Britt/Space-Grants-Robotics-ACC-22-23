@@ -5,6 +5,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <math.h> 
+#include "debug.h"
 
 typedef char Err;
 
@@ -52,24 +53,25 @@ bool grid_obstacle_at(const Grid* grid, size_t idx);
 void grid_idx_to_cartesian(const Grid* grid, const unsigned int i, int* x, int* y);
 
 // Pretty Print frunctions for debugging
-void grid_print(const Grid* grid);
-void grid_print_mark(const Grid* grid, const size_t marked);
-void grid_print_path(const Grid* grid, const unsigned int* path, const unsigned char path_size);
+#ifdef DEBUG
+    void grid_print(const Grid* grid);
+    void grid_print_mark(const Grid* grid, const size_t marked);
+    void grid_print_path(const Grid* grid, const unsigned int* path, const unsigned char path_size);
 
-// Useful for debugging: Initialize grid with string.
-// Currently grid->obstacles is malloced, and so needs to be freed.
-Err grid_init_str(char* s, Grid* grid);
-// EXAMPLE INITIALIZATION STRING:
-// #define DEBUG_GRID_STRING "\
-// ........\n\
-// ........\n\
-// ...##...\n\
-// ....#...\n\
-// ....#...\n\
-// ....##..\n\
-// ........\n\
-// ........"
-// The #'s are obstacles and the .'s are open spaces
-
-
+    // Useful for debugging: Initialize grid with string.
+    // Currently grid->obstacles is malloced, and so needs to be freed.
+    Err grid_init_str(char* s, Grid* grid);
+    // EXAMPLE INITIALIZATION STRING:
+    // #define DEBUG_GRID_STRING "\
+    // ........\n\
+    // ........\n\
+    // ...##...\n\
+    // ....#...\n\
+    // ....#...\n\
+    // ....##..\n\
+    // ........\n\
+    // ........"
+    // The #'s are obstacles and the .'s are open spaces
 #endif
+
+#endif//GUARD_astar_h

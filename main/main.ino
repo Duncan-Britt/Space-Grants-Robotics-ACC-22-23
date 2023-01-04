@@ -3,7 +3,12 @@
 #include "motors.h"
 #include "pose.h"
 #include "async.h"
-#include "test.h" // Used for testing/debugging
+#include "debug.h"
+
+#ifdef DEBUG
+#include "test.h" // Used for testing
+#endif//DEBUG
+
 // #include <Geometry.h> // https://github.com/tomstewart89/Geometry => Example use: https://github.com/tomstewart89/Geometry/blob/master/examples/HowToUse/HowToUse.ino
 
 // using namespace Geometry;
@@ -51,15 +56,19 @@
 
 // test.h
 // ======
-// A place to store code for testing and debugging.
+// A place to store code for testing
+
+// debug.h
+// =======
+// macros for test/debug only actions.
 
 // MISC NOTES:
 // _______________________________________________________________________________________
 // The code in the setup() function is run when the robot is turned on.
 // Once the execution is finished, the loop() function runs until the robot is shut off.
 
-//   _            _                         
-//  |_ ._   _|   / \     _  ._   o  _       
+//   _           _                         
+//  |_ ._   _|   / \    _  ._   o  _       
 //  |_ | | (_|   \_/ \/ (/_ | \/ | (/_ \/\/ 
 
 // Define model and input pin for IR sensor:
@@ -87,8 +96,7 @@ bool time_elapsed_ms_50() {
     return false; 
 }
 
-// radians
-#define THRESHOLD_MINOR_ROT 0.03
+#define THRESHOLD_MINOR_ROT 0.03 // radians
 bool pose_achieved_minor()
 { 
     switch (idx_pose_array_minor) {
@@ -253,15 +261,28 @@ AsyncLoop loop_obstacle;
 AsyncLoop loop_pid_rotational; 
 AsyncLoop loop_pid_translational;
 
+void test_func() {
+    for (int i = 0; i < pose_queue_major.size; ++i) {
+        DEBUG_PRINT(i);
+    }
+}
+
 void setup() 
 {
     Serial.begin(9600); // Needed to print to Serial Monitor.
     motors_init_pins();
     Pose_enqueue_transition(&pose_current, &pose_final, pose_array_minor);
+    DEBUG_PRINTLN(F("\n"));
+    // test_a_star();
+    // test_func();
+
+    DEBUG_PRINT("input: ");
+    DEBUG_PRINTLN(INPUT);
     
     loop_state
         .when(time_elapsed_ms_50)
         .then(update_state);
+
 
     loop_poses_major
         .when(pose_achieved_major)
@@ -298,6 +319,10 @@ void setup()
     loop_pid_translational
         .when(time_elapsed_ms_50)
         .then(pid_correction_translational);
+
+    DEBUG_PRINTLN_TRACE(freeRam());
+    delay(1000);
+    DEBUG_PRINTLN_TRACE(freeRam());
 }
 
 void loop() 

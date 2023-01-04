@@ -1,5 +1,53 @@
 #include "pose.h"
 
+#ifdef DEBUG
+void Vec2D_print(const Vec2D* v)
+{
+    DEBUG_PRINT(F("("));
+    DEBUG_PRINT(v->x);
+    DEBUG_PRINT(F(","));
+    DEBUG_PRINT(v->y);
+    DEBUG_PRINT(F(")"));
+}
+
+void Vec2D_println(const Vec2D* v)
+{
+    Vec2D_print(v);
+    DEBUG_PRINTLN(F(""));
+}
+
+void Pose_print(const Pose* p)
+{
+    DEBUG_PRINT(F("[ "));
+    Vec2D_print(&(p->translation));
+    DEBUG_PRINT(F(" "));
+    DEBUG_PRINT(p->rotation);
+    DEBUG_PRINT(F(" ]"));
+}
+
+void Pose_println(const Pose* p)
+{
+    Pose_print(p);
+    DEBUG_PRINTLN(F(""));
+}
+
+void PoseQueue::print()
+{
+    DEBUG_PRINT(F(":: "));
+    for (uint8_t i = b, j = 0; j < size; i = (i + 1) % capacity) {
+        Pose_print(queue + i);
+        DEBUG_PRINT(F(" :: "));
+        ++j;
+    }        
+}
+
+void PoseQueue::println()
+{
+    print();
+    DEBUG_PRINTLN(F(""));
+}
+#endif//DEBUG
+
 // Deteremines the quadrant of a cartesian coordinate.
 // Returns numbers in range [1, 4].
 uint8_t quadrant(const Vec2D* A);
@@ -9,53 +57,6 @@ void Vec2D_sub(const Vec2D* a, const Vec2D* b, Vec2D* result)
     result->x = a->x - b->x;
     result->y = a->y - b->y;
 }
-
-void Vec2D_print(const Vec2D* v)
-{
-    Serial.print("(");
-    Serial.print(v->x);
-    Serial.print(",");
-    Serial.print(v->y);
-    Serial.print(")");
-}
-
-void Vec2D_println(const Vec2D* v)
-{
-    Vec2D_print(v);
-    Serial.println("");
-}
-
-void Pose_print(const Pose* p)
-{
-    Serial.print("[ ");
-    Vec2D_print(&(p->translation));
-    Serial.print(" ");
-    Serial.print(p->rotation);
-    Serial.print(" ]");
-}
-
-void Pose_println(const Pose* p)
-{
-    Pose_print(p);
-    Serial.println("");
-}
-
-// void Pose_set_transition(const Pose* current_pose, const Pose* desired_pose, Pose* steps)
-// {
-//     // steps must be an array of length 3;
-
-//     // To find the first pose, subtract the current pose translation vector from the desired pose translation vector.
-//     // Take the angle from the positive x axis of this new vector.
-//     Vec2D diff;
-//     Vec2D_sub(&(desired_pose->translation), &(current_pose->translation), &diff);    
-//     steps->translation = current_pose->translation;
-//     steps->rotation = atan((double)diff.y / (double)diff.x);
-//     // Second pose:
-//     (steps+1)->translation = desired_pose->translation;
-//     (steps+1)->rotation = steps->rotation;
-//     // Third pose:
-//     *(steps+2) = *desired_pose;
-// }
 
 uint8_t quadrant(const Vec2D* A)
 {    
@@ -119,20 +120,4 @@ PoseQueue& PoseQueue::dequeue()
     --size;
         
     return *this;
-}
-
-void PoseQueue::print()
-{
-    Serial.print(":: ");
-    for (uint8_t i = b, j = 0; j < size; i = (i + 1) % capacity) {
-        Pose_print(queue + i);
-        Serial.print(" :: ");
-        ++j;
-    }        
-}
-
-void PoseQueue::println()
-{
-    print();
-    Serial.println("");
 }

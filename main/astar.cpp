@@ -29,9 +29,13 @@ void pq_shift_down(Node* pq, const size_t size, const unsigned int i);
 void node_copy(Node* orig, Node* cpy);
 void pq_dequeue(Node* pq, size_t* size, Node* result);
 void pq_shift_up(Node* pq, int i);
-void node_print(Node* node);
-void pq_print(Node* pq, size_t size);
-    
+
+#ifdef DEBUG
+    void node_print(Node* node);
+    void pq_print(Node* pq, size_t size);
+    #define DEBUG_PRINT_NODE(node) node_print(node)
+    #define DEBUG_PRINT_PQ(pq, size) pq_print(pq, size)
+#endif
 //  _   _  _ ___      ___ ___ ___  _        __   
 // | \ |_ |_  |  |\ |  |   |   |  / \ |\ | (_  o 
 // |_/ |_ |  _|_ | \| _|_  |  _|_ \_/ | \| __) o
@@ -50,10 +54,10 @@ void printBits(size_t const size, void const * const ptr)
     for (i = size-1; i >= 0; i--) {
         for (j = 7; j >= 0; j--) {
             byte = (b[i] >> j) & 1;
-            printf("%u", byte);
+            DEBUG_PRINT(byte);
         }
     }
-    puts("");
+    DEBUG_PRINTLN("");
 }
 
 int pq_parent(int i)
@@ -71,27 +75,32 @@ int pq_right_child(int i)
     return (2 * i) + 2;
 }
 
-void pq_shift_down(Node* pq, const size_t size, const unsigned int i)
+void pq_shift_down(Node* pq, const size_t size, unsigned int i)
 {
     unsigned int minIndex = i;
-    unsigned int l = pq_left_child(i);
-    
-    if (l < size && pq[l] < pq[minIndex]) {
-        minIndex = l;
-    }
 
-    unsigned int r = pq_right_child(i);
+    while (true) {
+        unsigned int l = pq_left_child(i);
 
-    if (r < size && pq[r] < pq[minIndex]) {
-        minIndex = r;
-    }
+        if (l < size && pq[l] < pq[minIndex]) {
+            minIndex = l;
+        }
 
-    if (i != minIndex) {
-        Node temp = pq[i];
-        pq[i] = pq[minIndex];
-        pq[minIndex] = temp;
+        unsigned int r = pq_right_child(i);
 
-        pq_shift_down(pq, size, minIndex);
+        if (r < size && pq[r] < pq[minIndex]) {
+            minIndex = r;
+        }
+
+        if (i != minIndex) {
+            Node temp = pq[i];
+            pq[i] = pq[minIndex];
+            pq[minIndex] = temp;
+            i = minIndex;
+        }
+        else {
+            break;
+        }
     }
 }
 
@@ -123,22 +132,22 @@ void pq_shift_up(Node* pq, int i)
     }
 }
 
+#ifdef DEBUG
 void node_print(Node* node)
 {
     // printf("[gC:%u gI:%u]", node->gCost, node->grid_idx);
-    Serial.println("node_print needs to be reimplemented");
+    DEBUG_PRINTLN(F("node_print needs to be reimplemented"));
 }
 
 void pq_print(Node* pq, size_t size)
 {
-    // printf("pq: ");
-    // for (size_t i = 0; i < size; ++i) {
-    //     node_print(pq+i);
-    // }
-    // printf("\n");
-    Serial.println("pq_print needs to be reimplemented");
+    DEBUG_PRINT(F("pq: "));
+    for (size_t i = 0; i < size; ++i) {
+        node_print(pq+i);
+    }
+    DEBUG_PRINTLN(F(""));
 }
-
+#endif//DEBUG
 
 //  _       _     ___  _         _ ___ 
 // |_) | | |_) |   |  /     /\  |_) |  
@@ -151,12 +160,13 @@ bool grid_obstacle_at(const Grid* grid, size_t idx)
     return (grid->obstacles[byte_idx] & (1 << bit_idx)) >> bit_idx;
 }
 
+#ifdef DEBUG
 void grid_print(const Grid* grid)
 {    
     for (size_t i = 0; i < (grid->cols * grid->rows); ++i) {     
-        Serial.print(grid_obstacle_at(grid, i) ? "# " : ". ");
+        DEBUG_PRINT(grid_obstacle_at(grid, i) ? F("# ") : F(". "));
         if ((i+1) % grid->cols == 0) {
-            Serial.println("");
+            DEBUG_PRINTLN(F(""));
         }
     }
 }
@@ -165,13 +175,13 @@ void grid_print_mark(const Grid* grid, const size_t marked)
 {    
     for (size_t i = 0; i < (grid->cols * grid->rows); ++i) {
         if (i == marked) {            
-            Serial.print("@ ");
+            DEBUG_PRINT(F("@ "));
         }
         else {
-            Serial.print(grid_obstacle_at(grid, i) ? "# " : ". ");
+            DEBUG_PRINT(grid_obstacle_at(grid, i) ? F("# ") : F(". "));
         }
         if ((i+1) % grid->cols == 0) {
-            Serial.println("");
+            DEBUG_PRINTLN(F(""));
         }
     }
 }
@@ -188,13 +198,13 @@ void grid_print_path(const Grid* grid, const unsigned int* path, const unsigned 
         }
         
         if (in_path) {
-            Serial.print("@ ");
+            DEBUG_PRINT(F("@ "));
         }
         else {
-            Serial.print(grid_obstacle_at(grid, i) ? "# " : ". ");
+            DEBUG_PRINT(grid_obstacle_at(grid, i) ? F("# ") : F(". "));
         }
         if ((i+1) % grid->cols == 0) {
-            Serial.println("");
+            DEBUG_PRINTLN(F(""));
         }
     }
 }
@@ -247,9 +257,9 @@ Err grid_init_str(char* s, Grid* grid)
                 }
                 break;
             default:
-                Serial.print("Unexpected char: ");
-                Serial.print(row[i]);
-                Serial.println("");
+                DEBUG_PRINT(F("Unexpected char: "));
+                DEBUG_PRINT(row[i]);
+                DEBUG_PRINTLN(F(""));
                 return 1;
             }
         }
@@ -259,6 +269,7 @@ Err grid_init_str(char* s, Grid* grid)
 
     return 0;
 }
+#endif//DEBUG
 
 void grid_idx_to_cartesian(const Grid* grid, const unsigned int i, int* x, int* y)
 {
@@ -306,6 +317,9 @@ Err grid_find_path(const Grid* grid, const unsigned int start, const unsigned in
     size_t explored_size = 0;
 
     while (pq_size != 0) {
+        if (explored_size >= explored_max_size) {
+            return -5;
+        }
         pq_dequeue(pq, &pq_size, explored + explored_size);
         explored_size++;
         
@@ -362,6 +376,9 @@ Err grid_find_path(const Grid* grid, const unsigned int start, const unsigned in
                 pq[pq_size].hCost = grid_distance(grid, neighbor_idx, start);
                 pq_shift_up(pq, pq_size);
                 ++pq_size;
+                if (pq_size == pq_max_size) {
+                    return -4;
+                }
             }
         }
     }

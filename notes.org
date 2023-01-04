@@ -7,8 +7,12 @@ $$ fwd = \frac{left + right}{2} $$
 $$ \theta = \frac{right - left}{2r} $$
 (r = the radius of the robot -> the distance between the center and the wheels.)
 
- 
+* Path Planning
+Cell decomposition path planning
+- approximate cell decomposition
 
+Wavefront path planning, aka NF1, often called  grassfire, is an efficient and simple-to-implement tech-
+nique for finding routes in such fixed-size cell arrays 
 
 * TODO Path planning
 I wrote an implementation of the A* algorithm. This is memory intensive, and that's a problem. Also, it may be unnecessary. The obstacles that bowswer will face aren't likely to lead bowser to serious elaborate dead ends. It should be sufficient to tell Bowser to just head in the right general direction

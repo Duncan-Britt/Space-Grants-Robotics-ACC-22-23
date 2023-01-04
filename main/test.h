@@ -18,18 +18,26 @@
 ........\n\
 ........"
 
+int freeRam () {
+  extern int __heap_start, *__brkval; 
+  int v; 
+  return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval); 
+}
+
 void test_a_star() 
 {
+    DEBUG_PRINTLN(F("beginning test"));
+
     Grid grid;
 
     char err = grid_init_str(DEBUG_GRID_STRING, &grid);
     if (err) {
-        Serial.println("err");
+        DEBUG_PRINTLN(F("err"));
         free(grid.obstacles);
         return;
     }
-    // grid_print(&grid);
-    // Serial.println("");
+    grid_print(&grid);
+    DEBUG_PRINTLN(F(""));
 
     unsigned int path[MAX_PATH_SIZE]; // [0, 65535]
     unsigned char path_size = 0; // [0, 255]
@@ -39,32 +47,38 @@ void test_a_star()
         grid_print_path(&grid, path, path_size);
         for (unsigned char i = 0; i < path_size; ++i) {
             Serial.print(path[i]);
-            Serial.print(" ");
+            DEBUG_PRINT(F(" "));
         }
-        Serial.println("");
+        DEBUG_PRINTLN(F(""));
         break;
     case 1:        
-        Serial.println("Path not found");
+        DEBUG_PRINTLN(F("Path not found"));
         break;
     case -1:        
-        Serial.println("Path exceeded max path size");
+        DEBUG_PRINTLN(F("Path exceeded max path size"));
         grid_print_path(&grid, path, path_size);
         for (unsigned char i = 0; i < path_size; ++i) {
             Serial.print(path[i]);
-            Serial.print(" ");
+            DEBUG_PRINT(F(" "));
         }
-        Serial.println("");
+        DEBUG_PRINTLN(F(""));
         break;
     case -2:
-        Serial.println("Invalid Destination");
+        DEBUG_PRINTLN(F("Invalid Destination"));
         break;
     case -3:
-        Serial.println("Invalid start");
+        DEBUG_PRINTLN(F("Invalid start"));
         break;
+    case -4:
+        DEBUG_PRINTLN(F("Exceeded max priority queue size"));
+        break;
+    case -5:
+        DEBUG_PRINTLN(F("Exceeded max size for explored nodes array\n"));
     }
-    
+    Serial.println(freeRam());
     free(grid.obstacles);
-    Serial.println("Freed");  
+    Serial.println(freeRam());
+    DEBUG_PRINTLN(F("Freed"));  
 }
 
 void test_motors_h() 
@@ -81,7 +95,7 @@ void test_pose_h()
     Vec2D_println(&c); // should print (79,-83);
 
     double angle = atan( ((double)c.y) / ((double)c.x) );
-    Serial.print("angle: ");
+    DEBUG_PRINT(F("angle: "));
     Serial.println(angle); // should be -0.81 radians
 
     Pose current_pose = {
@@ -104,12 +118,12 @@ void test_pose_h()
 // TEST EVENTS
 void print_hello() 
 {
-    Serial.println("Hi there");  
+    DEBUG_PRINTLN(F("Hi there"));  
 }
 
 void print_bye()
 {
-    Serial.println("Bye now!");
+    DEBUG_PRINTLN(F("Bye now!"));
 }
 
 uint32_t prev_millis = 0;
@@ -142,14 +156,14 @@ bool less_time_elapsed()
 // void setup() 
 // {
 //     Serial.begin(9600); // Needed to print to Serial Monitor.
-//     Serial.println("");
+//     DEBUG_PRINTLN(F(""));
 
-    // Serial.println("ok");
+    // DEBUG_PRINTLN(F("ok"));
     // num_loop
     //   .when([data]() -> bool {
     //     return data == 73243;
     // }).then([data]() -> void {
-    //     Serial.print("Data:" );
+    //     DEBUG_PRINT(F("Data:" );
     //     Serial.println(data);
     // }).when([data]() -> bool {
     //     return data == 0;
@@ -157,7 +171,7 @@ bool less_time_elapsed()
     // }).when([data]() -> bool {
     //     return data == 89000;
     // }).then([data]() -> void {
-    //     Serial.print("D: ");
+    //     DEBUG_PRINT(F("D: "));
     //     Serial.println(data);
     // });
 // }
@@ -167,7 +181,7 @@ bool less_time_elapsed()
     // data = (data + 1) % 100000;
 
     // if (data == 73243) {
-    //   Serial.println("if => 73243");
+    //   DEBUG_PRINTLN(F("if => 73243"));
     // }
     // num_loop();
 // }
@@ -178,7 +192,7 @@ void test_pose_queue(PoseQueue pose_queue) {
     /*     pose_queue.enqueue(&a); */
     /* } */
 
-    /* Serial.println(pose_queue.full() ? "full" : "not full"); */
+    /* Serial.println(pose_queue.full() ? "full" : "not full")); */
 
     /* Vec2D_println(&(pose_queue.front()->translation)); */
 
@@ -191,7 +205,7 @@ void test_pose_queue(PoseQueue pose_queue) {
     /*     Pose_print(pose_queue.front()); */
     /*     pose_queue.dequeue(); */
     /*     /\* pose_queue.println(); *\/ */
-    /*     Serial.println(""); */
+    /*     DEBUG_PRINTLN(F("")); */
     /* } */
     /* pose_queue.dequeue(); */
     /* /\* pose_queue.println(); *\/ */
@@ -200,7 +214,7 @@ void test_pose_queue(PoseQueue pose_queue) {
     /* Vec2D c = { .x = 0, .y = 0 }; */
     /* Vec2D d = { .x = 0, .y = 0 }; */
 
-    /* Serial.println(c == d ? "c&d: Equal" : "c&d: not equal"); */
+    /* Serial.println(c == d ? "c&d: Equal" : "c&d: not equal")); */
 
     Pose a = { .translation = { .x = 0, .y = 0 }, .rotation = 0 };
     Pose b = { .translation = { .x = 10, .y = -10 }, .rotation = 1.57 };

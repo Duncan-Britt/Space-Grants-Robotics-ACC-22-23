@@ -75,7 +75,7 @@ class AsyncLoop {
     }
     
  private:
-    static const uint8_t capacity = 10; // so far the max used is 2, not 10
+    static const uint8_t capacity = 5; // so far the max used is 2 as of 1/2/2023
     uint8_t b = 0;
     uint8_t e = 0;
     void* listeners[capacity];

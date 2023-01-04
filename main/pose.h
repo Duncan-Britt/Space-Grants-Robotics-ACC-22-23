@@ -2,6 +2,7 @@
 #define GUARD_pose_h
 
 #include <Arduino.h>
+#include "debug.h"
 
 typedef struct Vec2D {
     int x;
@@ -55,12 +56,13 @@ class PoseQueue {
     bool empty() { return size == 0; }
     void print();   //
     void println(); // For testing/debugging
+    uint8_t size = 0; 
  private:
     static const uint8_t capacity = 10; // Should this be greater? Lesser?
     Pose queue[capacity];
     uint8_t b = 0;
     uint8_t e = 0;
-    uint8_t size = 0;
+
 };
 
 #endif//GUARD_pose_h
