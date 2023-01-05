@@ -240,11 +240,8 @@ Err grid_init_str(char* s, Grid* grid)
         grid->obstacles[i] = 0;
     }
 
-    DEBUG_PRINTLN("Good here");
     char delim[1] = {'\n'};
-    DEBUG_PRINTLN("Problem?");
     char* row = strtok(s, delim);
-    DEBUG_PRINTLN("Even made it here!");
     
     int j = 0;  // byte index
     char k = 0; // bit index

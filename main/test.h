@@ -21,7 +21,7 @@
 ....##..\n\
 ........\n\
 ........"
-#define DEBUG_GRID_STRING_SIZE 64
+#define DEBUG_GRID_STRING_SIZE 72
 
 void test_a_star() 
 {
