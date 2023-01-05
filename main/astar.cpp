@@ -31,10 +31,13 @@ void pq_dequeue(Node* pq, size_t* size, Node* result);
 void pq_shift_up(Node* pq, int i);
 
 #ifdef DEBUG
-    void node_print(Node* node);
-    void pq_print(Node* pq, size_t size);
-    #define DEBUG_PRINT_NODE(node) node_print(node)
-    #define DEBUG_PRINT_PQ(pq, size) pq_print(pq, size)
+void node_print(Node* node);
+void pq_print(Node* pq, size_t size);
+#define DEBUG_PRINT_NODE(node) node_print(node)
+#define DEBUG_PRINT_PQ(pq, size) pq_print(pq, size)
+#else
+#define DEBUG_PRINT_NODE(node)
+#define DEBUG_PRINT_PQ(pq, size)
 #endif
 //  _   _  _ ___      ___ ___ ___  _        __   
 // | \ |_ |_  |  |\ |  |   |   |  / \ |\ | (_  o 
@@ -137,6 +140,11 @@ void node_print(Node* node)
 {
     // printf("[gC:%u gI:%u]", node->gCost, node->grid_idx);
     DEBUG_PRINTLN(F("node_print needs to be reimplemented"));
+    DEBUG_PRINT("[gC:");
+    DEBUG_PRINT(node->gCost);
+    DEBUG_PRINT(" gI:");
+    DEBUG_PRINT(node->grid_idx);
+    DEBUG_PRINTLN("]");
 }
 
 void pq_print(Node* pq, size_t size)
@@ -151,7 +159,7 @@ void pq_print(Node* pq, size_t size)
 
 //  _       _     ___  _         _ ___ 
 // |_) | | |_) |   |  /     /\  |_) |  
-// |   |_| |_) |_ _|_ \_   /--\ |  _|_ 
+// |   |_| |_) |_ _|_ \_   /--\ |  _|_
 
 bool grid_obstacle_at(const Grid* grid, size_t idx)
 {
@@ -171,7 +179,7 @@ void grid_print(const Grid* grid)
     }
 }
 
-void grid_print_mark(const Grid* grid, const size_t marked)
+void grid_print_mark(const Grid* grid, const uint16_t marked)
 {    
     for (size_t i = 0; i < (grid->cols * grid->rows); ++i) {
         if (i == marked) {            
@@ -186,7 +194,7 @@ void grid_print_mark(const Grid* grid, const size_t marked)
     }
 }
 
-void grid_print_path(const Grid* grid, const unsigned int* path, const unsigned char path_size)
+void grid_print_path(const Grid* grid, const uint16_t* path, const uint8_t path_size)
 {
     for (size_t i = 0; i < (grid->cols * grid->rows); ++i) {
         bool in_path = false;
@@ -227,14 +235,17 @@ Err grid_init_str(char* s, Grid* grid)
     }
     grid->rows++;
     size_t grid_size = (grid->cols * grid->rows * sizeof(char)) / 8 + 1;
-    grid->obstacles = (char*) malloc(grid_size);
+    grid->obstacles = (uint8_t*) malloc(grid_size);
     for (size_t i = 0; i < grid_size; ++i) {
         grid->obstacles[i] = 0;
     }
-    
-    char* delim = "\n";    
-    char* row = strtok(s, delim);
 
+    DEBUG_PRINTLN("Good here");
+    char delim[1] = {'\n'};
+    DEBUG_PRINTLN("Problem?");
+    char* row = strtok(s, delim);
+    DEBUG_PRINTLN("Even made it here!");
+    
     int j = 0;  // byte index
     char k = 0; // bit index
     while (row != NULL) {
@@ -290,7 +301,7 @@ unsigned grid_distance(const Grid* grid, const unsigned int i, const unsigned in
 }
 
 
-Err grid_find_path(const Grid* grid, const unsigned int start, const unsigned int dest, unsigned int* path, unsigned char* path_size, const unsigned char max_path_size)
+Err grid_find_path(const Grid* grid, const uint16_t start, const uint16_t dest, uint16_t* path, uint8_t* path_size, const uint8_t max_path_size)
 {
     if (grid_obstacle_at(grid, start)) {
         return -2;

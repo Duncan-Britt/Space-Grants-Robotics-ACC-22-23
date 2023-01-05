@@ -1,5 +1,4 @@
 #include "motors.h"
-#include <Arduino.h>
 
 // ___     ___ _  _               
 //  |  |\ | | |_ |_) |\ |  /\  |  

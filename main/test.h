@@ -1,11 +1,15 @@
 #ifndef GUARD_test_h
 #define GUARD_test_h
 
+#ifdef ARDUINO
 #include <Arduino.h>
+#endif//ARDUINO
+
 #include "astar.h"
 #include "motors.h"
 #include "pose.h"
 #include "async.h"
+#include "debug.h"
 
 #define MAX_PATH_SIZE 16
 #define DEBUG_GRID_STRING "\
@@ -17,12 +21,7 @@
 ....##..\n\
 ........\n\
 ........"
-
-int freeRam () {
-  extern int __heap_start, *__brkval; 
-  int v; 
-  return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval); 
-}
+#define DEBUG_GRID_STRING_SIZE 64
 
 void test_a_star() 
 {
@@ -30,7 +29,8 @@ void test_a_star()
 
     Grid grid;
 
-    char err = grid_init_str(DEBUG_GRID_STRING, &grid);
+    char grid_string[DEBUG_GRID_STRING_SIZE] = DEBUG_GRID_STRING;
+    char err = grid_init_str(grid_string, &grid);
     if (err) {
         DEBUG_PRINTLN(F("err"));
         free(grid.obstacles);
@@ -39,9 +39,9 @@ void test_a_star()
     grid_print(&grid);
     DEBUG_PRINTLN(F(""));
 
-    unsigned int path[MAX_PATH_SIZE]; // [0, 65535]
-    unsigned char path_size = 0; // [0, 255]
-    err = grid_find_path(&grid, 0, 63, path, &path_size, MAX_PATH_SIZE);
+    uint16_t path[MAX_PATH_SIZE]; // [0, 65535]
+    uint8_t path_size = 0; // [0, 255]
+    err = grid_find_path(&grid, 7, 56, path, &path_size, MAX_PATH_SIZE);
     switch (err) {
     case 0:
         grid_print_path(&grid, path, path_size);
@@ -75,9 +75,8 @@ void test_a_star()
     case -5:
         DEBUG_PRINTLN(F("Exceeded max size for explored nodes array\n"));
     }
-    Serial.println(freeRam());
+    // DEBUG_PRINTLN(freeRam());
     free(grid.obstacles);
-    Serial.println(freeRam());
     DEBUG_PRINTLN(F("Freed"));  
 }
 

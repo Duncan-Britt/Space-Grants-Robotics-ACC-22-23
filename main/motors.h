@@ -1,7 +1,7 @@
 #ifndef GUARD_motors_h
 #define GUARD_motors_h
 
-#include <Arduino.h>
+#include "debug.h"
 
 // Sets pinMode for motor control pins to OUTPUT
 void motors_init_pins();

@@ -1,10 +1,9 @@
 #ifndef GUARD_astar_h
 #define GUARD_astar_h
 
-#include <Arduino.h>
 #include <string.h>
 #include <stdlib.h>
-#include <math.h> 
+#include <math.h>
 #include "debug.h"
 
 typedef char Err;
@@ -55,8 +54,8 @@ void grid_idx_to_cartesian(const Grid* grid, const unsigned int i, int* x, int* 
 // Pretty Print frunctions for debugging
 #ifdef DEBUG
     void grid_print(const Grid* grid);
-    void grid_print_mark(const Grid* grid, const size_t marked);
-    void grid_print_path(const Grid* grid, const unsigned int* path, const unsigned char path_size);
+    void grid_print_mark(const Grid* grid, const uint16_t marked);
+    void grid_print_path(const Grid* grid, const uint16_t* path, const uint8_t path_size);
 
     // Useful for debugging: Initialize grid with string.
     // Currently grid->obstacles is malloced, and so needs to be freed.
@@ -75,3 +74,7 @@ void grid_idx_to_cartesian(const Grid* grid, const unsigned int i, int* x, int* 
 #endif
 
 #endif//GUARD_astar_h
+
+
+
+

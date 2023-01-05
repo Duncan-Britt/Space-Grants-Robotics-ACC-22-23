@@ -1,25 +1,26 @@
 #ifndef GUARD_pose_h
 #define GUARD_pose_h
 
-#include <Arduino.h>
 #include "debug.h"
 
 typedef struct Vec2D {
     int x;
     int y;
-    bool operator==(const Vec2D& other) { return x == other.x && y == other.y; }
 } Vec2D;
+
+bool operator==(const Vec2D& a, const Vec2D& b);
+void Vec2D_sub(const Vec2D* a, const Vec2D* b, Vec2D* result);
+void Vec2D_print(const Vec2D* v);
+void Vec2D_println(const Vec2D* v);
 
 // DO NOT CHANGE THE ORDER OF THE STRUCT MEMBERS
 typedef struct Pose {
     Vec2D translation;
     double rotation; // radians in range [0, 2π]
-    bool operator==(const Pose& other) { return translation == other.translation && rotation == other.rotation; }
 } Pose;
 
-void Vec2D_sub(const Vec2D* a, const Vec2D* b, Vec2D* result);
-void Vec2D_print(const Vec2D* v);
-void Vec2D_println(const Vec2D* v);
+
+bool operator==(const Pose& a, const Pose& b);
 void Pose_print(const Pose* p);
 void Pose_println(const Pose* p);
 
@@ -51,7 +52,7 @@ class PoseQueue {
     Pose* last() { return queue + ((e - 1) % capacity); }
     PoseQueue& enqueue(Pose* pose);
     PoseQueue& dequeue();
-    PoseQueue& clear() { b = 0; e = 0; size = 0; }
+    PoseQueue& clear() { b = 0; e = 0; size = 0; return *this; }
     bool full() { return size == capacity; }
     bool empty() { return size == 0; }
     void print();   //

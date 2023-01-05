@@ -1,6 +1,7 @@
 #ifndef GUARD_async_h
 #define GUARD_async_h
-#include <Arduino.h>
+
+#include "debug.h"
 
 // There is no multi-threading/multi-process support on the Arduino, so this code implementes an interface 
 // for defining distinct loops that will run asynchronously.

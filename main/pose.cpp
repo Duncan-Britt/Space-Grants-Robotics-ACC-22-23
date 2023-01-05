@@ -48,6 +48,16 @@ void PoseQueue::println()
 }
 #endif//DEBUG
 
+bool operator==(const Pose& a, const Pose& b)
+{
+    return a.translation == b.translation && a.rotation == b.rotation;
+}
+
+bool operator==(const Vec2D& a, const Vec2D& b)
+{
+    return a.x == b.x && a.y == b.y;
+}
+
 // Deteremines the quadrant of a cartesian coordinate.
 // Returns numbers in range [1, 4].
 uint8_t quadrant(const Vec2D* A);

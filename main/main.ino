@@ -1,5 +1,4 @@
-#include <SharpIR.h>
-#include "astar.h"
+#include "SharpIR.h"
 #include "motors.h"
 #include "pose.h"
 #include "async.h"
@@ -100,11 +99,12 @@ bool time_elapsed_ms_50() {
 bool pose_achieved_minor()
 { 
     switch (idx_pose_array_minor) {
-    case 0:
+    case 0: {
       // To transition to the first minor pose, the robot only need rotate. Therefore, to confirm that it has achieved its goal,
       // we simply ask wether the discrepancy is within a certain threshold.
         return abs(pose_current.rotation - pose_array_minor->rotation) < THRESHOLD_MINOR_ROT;
-    case 1:
+    }
+    case 1: {
       // And now for the tricky bit
       // When the robot attempts to maintain its orientation and move straight ahead, to the second minor pose,
       // it may do so imperfectly. It may veer off course some what if it fails to keep totally straight.
@@ -145,12 +145,14 @@ bool pose_achieved_minor()
             auto g = [f, k](double x) -> double { return f(x) + k; };
             // (yc > g(xc)) != (ya > g(xa))
             return ((double)pose_current.translation.y > g(pose_current.translation.x)) != ((double)a->y > g(a->x));            
-        }       
-    case 2:
+        }
+    }
+    case 2: {
       // To transition to the third minor pose from the second, the robot only need rotate. Therefore, to confirm that it has 
       // achieved its goal, we simply ask wether the discrepancy is within a certain threshold.
         return abs(pose_current.rotation - (pose_array_minor + 2)->rotation) < THRESHOLD_MINOR_ROT;        
-    }    
+    }
+    }
 }
 
 bool pose_achieved_major()
@@ -254,83 +256,84 @@ bool time_elapsed_ms_1000()
     return false; 
 }
 
-AsyncLoop loop_state;
-AsyncLoop loop_poses_major;
-AsyncLoop loop_poses_minor;
-AsyncLoop loop_obstacle; 
-AsyncLoop loop_pid_rotational; 
-AsyncLoop loop_pid_translational;
+// AsyncLoop loop_state;
+// AsyncLoop loop_poses_major;
+// AsyncLoop loop_poses_minor;
+// AsyncLoop loop_obstacle; 
+// AsyncLoop loop_pid_rotational; 
+// AsyncLoop loop_pid_translational;
 
-void test_func() {
-    for (int i = 0; i < pose_queue_major.size; ++i) {
-        DEBUG_PRINT(i);
-    }
-}
+// void test_func() {
+//     for (int i = 0; i < pose_queue_major.size; ++i) {
+//         DEBUG_PRINT(i);
+//     }
+// }
 
 void setup() 
 {
-    Serial.begin(9600); // Needed to print to Serial Monitor.
-    motors_init_pins();
-    Pose_enqueue_transition(&pose_current, &pose_final, pose_array_minor);
-    DEBUG_PRINTLN(F("\n"));
+    DEBUG_BEGIN(9600); // Needed to print to Serial Monitor.
+    // motors_init_pins();
+    // Pose_enqueue_transition(&pose_current, &pose_final, pose_array_minor);
+    // DEBUG_PRINTLN(F("\n"));
     // test_a_star();
     // test_func();
+    test_a_star();
 
-    DEBUG_PRINT("input: ");
-    DEBUG_PRINTLN(INPUT);
     
-    loop_state
-        .when(time_elapsed_ms_50)
-        .then(update_state);
+    // loop_state
+    //     .when(time_elapsed_ms_50)
+    //     .then(update_state);
 
 
-    loop_poses_major
-        .when(pose_achieved_major)
-        .then([pose_current, pose_queue_major, pose_array_minor]() -> void { // Enqueue minor poses, dequeue major pose.
-                if (!(pose_queue_major.empty())) {
-                    Pose_enqueue_transition(&pose_current, pose_queue_major.front(), pose_array_minor);
-                    idx_pose_array_minor = 0;
-                    pose_queue_major.dequeue();
-                }
-            });
+    // loop_poses_major
+    //     .when(pose_achieved_major)
+    //     .then([pose_current, pose_queue_major, pose_array_minor]() -> void { // Enqueue minor poses, dequeue major pose.
+    //             if (!(pose_queue_major.empty())) {
+    //                 Pose_enqueue_transition(&pose_current, pose_queue_major.front(), pose_array_minor);
+    //                 idx_pose_array_minor = 0;
+    //                 pose_queue_major.dequeue();
+    //             }
+    //         });
 
-    // In between two poses in the pose_queue_major, there are minor poses
-    // which must be traversed
-    loop_poses_minor
-        .when(pose_achieved_minor)
-        .then([pose_array_minor]() -> void { // dequeue minor pose
-            if (idx_pose_array_minor < 2) {
-                ++idx_pose_array_minor;
-            }
-        });
+    // // In between two poses in the pose_queue_major, there are minor poses
+    // // which must be traversed
+    // loop_poses_minor
+    //     .when(pose_achieved_minor)
+    //     .then([pose_array_minor]() -> void { // dequeue minor pose
+    //         if (idx_pose_array_minor < 2) {
+    //             ++idx_pose_array_minor;
+    //         }
+    //     });
 
-    loop_obstacle
-        .when(obstacle_detected)
-        .then(stop)
-        .when([pose_queue_major, pose_array_minor]() -> bool {
-            return idx_pose_array_minor == 2 && pose_achieved_minor();
-        })
-        .then(reroute);
+    // loop_obstacle
+    //     .when(obstacle_detected)
+    //     .then(stop)
+    //     .when([pose_queue_major, pose_array_minor]() -> bool {
+    //         return idx_pose_array_minor == 2 && pose_achieved_minor();
+    //     })
+    //     .then(reroute);
 
-    loop_pid_rotational
-        .when(time_elapsed_ms_50)
-        .then(pid_correction_rotational);
+    // loop_pid_rotational
+    //     .when(time_elapsed_ms_50)
+    //     .then(pid_correction_rotational);
 
-    loop_pid_translational
-        .when(time_elapsed_ms_50)
-        .then(pid_correction_translational);
+    // loop_pid_translational
+    //     .when(time_elapsed_ms_50)
+    //     .then(pid_correction_translational);
 
-    DEBUG_PRINTLN_TRACE(freeRam());
-    delay(1000);
-    DEBUG_PRINTLN_TRACE(freeRam());
+    // DEBUG_PRINTLN_TRACE(freeRam());
+    // delay(1000);
+    // DEBUG_PRINTLN_TRACE(freeRam());
 }
 
 void loop() 
 {
-    loop_state();
-    loop_poses_major();
-    loop_poses_minor();
-    loop_obstacle();
-    loop_pid_rotational();
-    loop_pid_translational();
+    // loop_state();
+    // loop_poses_major();
+    // loop_poses_minor();
+    // loop_obstacle();
+    // loop_pid_rotational();
+    // loop_pid_translational();
 }
+
+NON_ARDUINO_MAIN
