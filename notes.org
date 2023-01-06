@@ -1,5 +1,19 @@
+#+begin_SRC C++
+  #include <iostream>
 
-* Odometry
+  int main()
+  {      
+      std::cout << "Hey, World." << std::endl;
+      return 0;
+  }
+#+end_SRC
+
+#+RESULTS:
+| Hey | World. |
+
+
+* Educational Resources, Notes
+** Odometry
 https://www.youtube.com/watch?v=ZW7T6EFyYnc
 Forward motion is the average of left and right wheels motion
 $$ fwd = \frac{left + right}{2} $$
@@ -7,40 +21,17 @@ $$ fwd = \frac{left + right}{2} $$
 $$ \theta = \frac{right - left}{2r} $$
 (r = the radius of the robot -> the distance between the center and the wheels.)
 
-* Path Planning
+** Path Planning
 Cell decomposition path planning
 - approximate cell decomposition
 
 Wavefront path planning, aka NF1, often called  grassfire, is an efficient and simple-to-implement tech-
 nique for finding routes in such fixed-size cell arrays 
 
-* TODO Path planning
 I wrote an implementation of the A* algorithm. This is memory intensive, and that's a problem. Also, it may be unnecessary. The obstacles that bowswer will face aren't likely to lead bowser to serious elaborate dead ends. It should be sufficient to tell Bowser to just head in the right general direction
 and avoid obstacles.
 
-** Strategy
-- Orient towards the target
-- move toward the target until an obstacle is encountered
-- Analyze surroundings
-  Produce a grid of the terrain immediate vicinity with obstacles
-- Use A* algorithm to move beyond the obstacles in the direction of the target
-- Abandon Grid. Orient toward target. Keep going until another obstacle is encountered.
-
-** Problems with this approach:
-If we ran into an obstacle like this:
-
-     !!!!!!!!!
-     !       !
-     !   X   !
-     !       !
-     !       !!!!!
-
-We could get stuck going forward and backwards. That said, we are unlikely to encounter this kind of obstacle. Perhaps a work around would be:
-- If an obstacle is encountered in the process of navigating around an obstacle:
-  - Expand grid, preserving previous obstacle knowledge.
-
-** Optimizations
-We could find the borders of obstacles and place nodes past the ends of the borders of obstacles. This would speed up the A* algo and cut down on memroy use. Grid could be used for the unkown areas.
+We could find the borders of obstacles and place nodes past the ends of the borders of obstacles. This would speed up the A* algo and cut down on memroy use. Grid could be used for the unknown areas.
 
        . . . . . . . . . (temp target)
        . . . . . . . . . . . . . . .
@@ -51,81 +42,12 @@ We could find the borders of obstacles and place nodes past the ends of the bord
 		!Bowser!      !  . .
 		-------     ____ . .
 		           (Node). .
-      
-
-** old stuff
-1. Given
-- A 2D array representing a grid on a plane populated with booleans representing the presence of an obstacle
-  on each grid space
-- A starting position Pi
-- A target position Pf
-Choose a path (the shortest?) through that space from Pi to Pf. Represent the path using a collection of
-points on the path. The direction between each point will be assumed to be a straight line from one to the next.
-
-2. Given
-- A 2D array representing a grid on a plane populated with integers representing the probability of an obstacle
-  on each grid space
-- A starting position Pi
-- A target position Pf
-Choose a path (the shortest?) through that space from Pi to Pf. Represent the path using a collection of
-points on the path. The direction between each point will be assumed to be a straight line from one to the next.
-
-3. Given
-- A 2D array representing a grid on a plane populated with integers representing the probability of an obstacle
-  on each grid space
-- A starting position Pi
-- A target position Pf
-- The dimensions (l x w) of the Robot in units of grid spaces
-Choose a path (the shortest?) through that space from Pi to Pf. Represent the path using a collection of
-points on the path. The direction between each point will be assumed to be a straight line from one to the next.
-
-*** Solution
-Each space in the grid is a node. For each node (gridspace), cost can be computed:
-G cost = distance from the starting node
-H cost (heuristic) = distance from the end node
-F cost = G cost + H Cost
-
-Need a priority queue
-
-Look at the nodes immediately surrounding the current position, and choose the node with the lowest F cost
-(H cost is tie-breaker)
-Repeat the process from this new chosen node (G cost is still the distance from the starting node, H cost
-is still the distance from the target node)
-
-A* Search Algorithm
-
--------------
-
-OPEN => the set of nodes to be evaluated
-CLOSED => the set of nodes already evaluated
-add the start node to OPEN
-
-loop
-  current = node in OPEN with the lowest f_cost
-  remove current from OPEN
-  add current to CLOSED
-
-  if current is the target node //path has been found
-    return
-
-  foreach neighbour of the current node
-    if neighbour is not traversable or neighbour is in CLOSED
-      skip to the next neighbour
-
-
-    if new path to neighbour is shortor OR neighboor is not in OPEN
-    set f_cost of neighbour
-    set parent of neighbour to current
-    if neighbour is not in OPEN
-      add neighbour to OPEN
-      
-* Notes
+           
+** Misc
 Beware of multiple libraries using the same timer: https://youtu.be/lOTDSQua--s?t=46
 
-* TODO Hall Effect Sensor Wheel Encoders
-Returns hall effect sensor data (a number of clicks)
 
-* Code Snippets
+** Code Snippets
 #+begin_src C++ Possible Interface for Controlling the wheels
 
   void loop() {

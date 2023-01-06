@@ -256,84 +256,75 @@ bool time_elapsed_ms_1000()
     return false; 
 }
 
-// AsyncLoop loop_state;
-// AsyncLoop loop_poses_major;
-// AsyncLoop loop_poses_minor;
-// AsyncLoop loop_obstacle; 
-// AsyncLoop loop_pid_rotational; 
-// AsyncLoop loop_pid_translational;
-
-// void test_func() {
-//     for (int i = 0; i < pose_queue_major.size; ++i) {
-//         DEBUG_PRINT(i);
-//     }
-// }
+AsyncLoop loop_state;
+AsyncLoop loop_poses_major;
+AsyncLoop loop_poses_minor;
+AsyncLoop loop_obstacle; 
+AsyncLoop loop_pid_rotational; 
+AsyncLoop loop_pid_translational;
 
 void setup() 
 {
     DEBUG_BEGIN(9600); // Needed to print to Serial Monitor.
-    // motors_init_pins();
-    // Pose_enqueue_transition(&pose_current, &pose_final, pose_array_minor);
-    // DEBUG_PRINTLN(F("\n"));
-    // test_a_star();
-    // test_func();
+    motors_init_pins();
+    Pose_enqueue_transition(&pose_current, &pose_final, pose_array_minor);
+    DEBUG_PRINTLN(F("\n"));
     test_a_star();
 
     
-    // loop_state
-    //     .when(time_elapsed_ms_50)
-    //     .then(update_state);
+    loop_state
+        .when((void*)time_elapsed_ms_50)
+        .then((void*)update_state);
 
+    loop_poses_major
+        .when((void*)pose_achieved_major)
+        .then((void*)+[]() -> void { // Enqueue minor poses, dequeue major pose.
+                if (!(pose_queue_major.empty())) {
+                    Pose_enqueue_transition(&pose_current, pose_queue_major.front(), pose_array_minor);
+                    idx_pose_array_minor = 0;
+                    pose_queue_major.dequeue();
+                }
+            });
 
-    // loop_poses_major
-    //     .when(pose_achieved_major)
-    //     .then([pose_current, pose_queue_major, pose_array_minor]() -> void { // Enqueue minor poses, dequeue major pose.
-    //             if (!(pose_queue_major.empty())) {
-    //                 Pose_enqueue_transition(&pose_current, pose_queue_major.front(), pose_array_minor);
-    //                 idx_pose_array_minor = 0;
-    //                 pose_queue_major.dequeue();
-    //             }
-    //         });
+    // In between two poses in the pose_queue_major, there are minor poses
+    // which must be traversed
+    loop_poses_minor
+        .when((void*)pose_achieved_minor)
+        .then((void*)+[]() -> void { // dequeue minor pose
+            if (idx_pose_array_minor < 2) {
+                ++idx_pose_array_minor;
+            }
+        });
 
-    // // In between two poses in the pose_queue_major, there are minor poses
-    // // which must be traversed
-    // loop_poses_minor
-    //     .when(pose_achieved_minor)
-    //     .then([pose_array_minor]() -> void { // dequeue minor pose
-    //         if (idx_pose_array_minor < 2) {
-    //             ++idx_pose_array_minor;
-    //         }
-    //     });
+    loop_obstacle
+        .when((void*)obstacle_detected)
+        .then((void*)stop)
+        .when((void*)+[]() -> bool {
+            return idx_pose_array_minor == 2 && pose_achieved_minor();
+        })
+        .then((void*)reroute);
 
-    // loop_obstacle
-    //     .when(obstacle_detected)
-    //     .then(stop)
-    //     .when([pose_queue_major, pose_array_minor]() -> bool {
-    //         return idx_pose_array_minor == 2 && pose_achieved_minor();
-    //     })
-    //     .then(reroute);
+    loop_pid_rotational
+        .when((void*)time_elapsed_ms_50)
+        .then((void*)pid_correction_rotational);
 
-    // loop_pid_rotational
-    //     .when(time_elapsed_ms_50)
-    //     .then(pid_correction_rotational);
+    loop_pid_translational
+        .when((void*)time_elapsed_ms_50)
+        .then((void*)pid_correction_translational);
 
-    // loop_pid_translational
-    //     .when(time_elapsed_ms_50)
-    //     .then(pid_correction_translational);
-
-    // DEBUG_PRINTLN_TRACE(freeRam());
-    // delay(1000);
-    // DEBUG_PRINTLN_TRACE(freeRam());
+    DEBUG_PRINTLN_TRACE(freeRam());
+    delay(1000);
+    DEBUG_PRINTLN_TRACE(freeRam());
 }
 
 void loop() 
 {
-    // loop_state();
-    // loop_poses_major();
-    // loop_poses_minor();
-    // loop_obstacle();
-    // loop_pid_rotational();
-    // loop_pid_translational();
+    loop_state();
+    loop_poses_major();
+    loop_poses_minor();
+    loop_obstacle();
+    loop_pid_rotational();
+    loop_pid_translational();
 }
 
 NON_ARDUINO_MAIN
