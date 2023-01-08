@@ -185,7 +185,7 @@ bool less_time_elapsed()
     // num_loop();
 // }
 
-void test_pose_queue(PoseQueue pose_queue) {
+void test_vec2d_queue(Vec2DQueue vec2d_queue) {
     /* for (uint8_t i = 0; i < 100; ++i) { */
     /*     Pose a = { .translation = { .x = i, .y = (i / 2) }, .rotation = ((double)i / 10.0) }; */
     /*     pose_queue.enqueue(&a); */

@@ -31,17 +31,17 @@ void Pose_println(const Pose* p)
     DEBUG_PRINTLN(F(""));
 }
 
-void PoseQueue::print()
+void Vec2DQueue::print()
 {
     DEBUG_PRINT(F(":: "));
     for (uint8_t i = b, j = 0; j < size; i = (i + 1) % capacity) {
-        Pose_print(queue + i);
+        Vec2D_print(queue + i);
         DEBUG_PRINT(F(" :: "));
         ++j;
-    }        
+    }
 }
 
-void PoseQueue::println()
+void Vec2DQueue::println()
 {
     print();
     DEBUG_PRINTLN(F(""));
@@ -75,14 +75,14 @@ uint8_t quadrant(const Vec2D* A)
           (A->x  < 0 && A->y  < 0 ? 3 : 4));
 }
 
-void Pose_enqueue_transition(const Pose* current_pose, const Pose* desired_pose, Pose* steps)
+void Pose_enqueue_transition(const Pose* current_pose, const Vec2D* desired_vec2d, Pose* steps)
 {
-    if (*current_pose == *desired_pose) return;
+    // if (current_pose->translation == *desired_vec2d) return;
     
     // To find the first pose, subtract the current pose translation vector from the desired pose translation vector.
     // Take the angle from the positive x axis of this new vector.
     Vec2D diff;
-    Vec2D_sub(&(desired_pose->translation), &(current_pose->translation), &diff);
+    Vec2D_sub(desired_vec2d, &(current_pose->translation), &diff);
  
     steps->translation = current_pose->translation;
     
@@ -91,7 +91,7 @@ void Pose_enqueue_transition(const Pose* current_pose, const Pose* desired_pose,
         steps->rotation = atan((double)diff.y / (double)diff.x);
         break;
     case 2: // QUADRANT II
-        steps->rotation = atan((double)diff.y / (double)diff.x) + 3.14;        
+        steps->rotation = atan((double)diff.y / (double)diff.x) + 3.14;
         break;
     case 3: // QUADRANT III
         steps->rotation = atan((double)diff.y / (double)diff.x) + 3.14;        
@@ -102,25 +102,22 @@ void Pose_enqueue_transition(const Pose* current_pose, const Pose* desired_pose,
     }
            
     // Second pose:
-    (steps + 1)->translation = desired_pose->translation;
-    (steps + 1)->rotation = steps->rotation;
-    
-    // Third pose:
-    *(steps + 2) = *desired_pose;
+    (steps + 1)->translation = *desired_vec2d;
+    (steps + 1)->rotation = steps->rotation;   
 }
 
-PoseQueue& PoseQueue::enqueue(Pose* pose)
+Vec2DQueue& Vec2DQueue::enqueue(Vec2D* position)
 {
     if (size == capacity) return *this;
 
-    *(queue + e) = *pose;
+    *(queue + e) = *position;
     e = (e + 1) % capacity;
     ++size;
         
     return *this;
 }
 
-PoseQueue& PoseQueue::dequeue()
+Vec2DQueue& Vec2DQueue::dequeue()
 {
     if (size == 0) {
         return *this;

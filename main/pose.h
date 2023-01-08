@@ -30,9 +30,9 @@ void Pose_println(const Pose* p);
 // - the second pose should be in the desired spot
 // - the third pose should be in the desired spot and facing the desired direction
    // steps must be an array of length 3;
-void Pose_enqueue_transition(const Pose* current_pose, const Pose* desired_pose, Pose* steps);
+void Pose_enqueue_transition(const Pose* current_pose, const Vec2D* desired_vec2d, Pose* steps);
 
-class PoseQueue {
+class Vec2DQueue {
 /* Example use: */
 /*     Adding a pose to the back of the queue: */
 /*     Pose a = { .translation = { .x = 42, .y = (42 / 2) }, .rotation = ((double)42 / 10.0) }; */
@@ -48,11 +48,11 @@ class PoseQueue {
 /*     ... pose_queue.front()->rotation; */
  public:
     // ALWAYS check that the pose_queue is not empty before calling front() or last()!
-    const Pose* front() { return queue + b; }
-    Pose* last() { return queue + ((e - 1) % capacity); }
-    PoseQueue& enqueue(Pose* pose);
-    PoseQueue& dequeue();
-    PoseQueue& clear() { b = 0; e = 0; size = 0; return *this; }
+    const Vec2D* front() { return queue + b; }
+    Vec2D* last() { return queue + ((e - 1) % capacity); }
+    Vec2DQueue& enqueue(Vec2D* pose);
+    Vec2DQueue& dequeue();
+    Vec2DQueue& clear() { b = 0; e = 0; size = 0; return *this; }
     bool full() { return size == capacity; }
     bool empty() { return size == 0; }
     void print();   //
@@ -60,7 +60,7 @@ class PoseQueue {
     uint8_t size = 0; 
  private:
     static const uint8_t capacity = 10; // Should this be greater? Lesser?
-    Pose queue[capacity];
+    Vec2D queue[capacity];
     uint8_t b = 0;
     uint8_t e = 0;
 

@@ -1,15 +1,16 @@
-#+begin_SRC C++
-  #include <iostream>
+* Tests to run once the robot is build
+- We should code the robot to turn on a light when it detects and obstacle and turn off a light when it believes there is no obstacle. The we should place the robot in front of various obstacles to see if we have successfully detected the obstalces.
+  - In order to do this test we'll need sensors attached to the robot.
+  - We might discover that we need to change the way we detect obstacles, which could involve hardware and/or software.
+- We should test our robot's ability to determine its location. We can do this perhaps using bluetooth or an led display. We could tell it to move in certain directions for abitrary amounts of time and see how accurate its estimate of its position is.
+- We should see if the robot can turn and travel a certain distance by initalizing it with some minor pose queue and seeing if it's able to loop through. We need to do this to tune our pid algorithms.
+  - we could first forget the queue part and just have it try to achieve just one desired pose.
+  - In order to perform this test we need the robot to be set up for motion. So we need the motors and wheels attached, wired, and powered. We also need the gyroscope and any other sensors we'll need to determine the position of the robot.
+  - We need to do this test repeatedly to determine the appropriate coefficients for our pid algorithm. We should expect it to be successful on the first go.
+- We should test our robots path planning & obstacle avoidance by creating mazes for it.
+  - We need to make sure the robot slows down fast enough when it finds an obstacle.
+  - If the robot doesn't do a good job path planning, if it runs out of memory, etc, we may need to rethink how we navigate.
 
-  int main()
-  {      
-      std::cout << "Hey, World." << std::endl;
-      return 0;
-  }
-#+end_SRC
-
-#+RESULTS:
-| Hey | World. |
 
 
 * Educational Resources, Notes
