@@ -161,11 +161,20 @@ bool position_achieved()
 
 // Tests!
 
+// Reimplement A* search algorithm using IDA* to reduce memory consumption
+// https://en.wikipedia.org/wiki/Iterative_deepening_A*
+// Also consider sampling based methods e.g. Probabilistic Roadmaps (PRMs)
+// Randomly Expanding Random Trees (RRT or RRT*) https://youtu.be/XIBP0vCKl78?t=2307
+// Potential Fields
+// Can implement multiple path finding algorithms and be able to test among them. RRT* looks promising
+// https://ieeexplore.ieee.org/document/6617944 -> this is about an RRT implementation for limited memory consumption 
+
 // Figure out how to translate between poses in the global and local reference frame
 // Figure out the dimensions of the occupancy grid and the cells within which can be used to represent
 // the surroundings.  Look in "astar.h".
 
-// Need a function to find the discrepancy between 2 angles. (Consider 2π - 0, and similar).
+// Need a function to find the discrepancy between 2 angles. (Consider 2π - 0, and similar). Should return
+// a positive or negative number to indicate counter clockwise or clockwise.
 
 // Implement a function which, given a grid and path on the grid, removes the unnecessary path nodes.
 // This is to say, if a series of nodes on the path are along a straight line, only the ends of the line
