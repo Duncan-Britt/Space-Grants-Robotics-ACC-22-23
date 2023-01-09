@@ -80,9 +80,9 @@ SharpIR sensor_IR = SharpIR(IRPin, MODEL);
 
 Pose pose_current = { .translation = { .x = 0, .y = 0 }, .rotation = 0.0 };
 Vec2D vec2d_final = { .x = 1000, .y = 0 };
-Vec2DQueue vec2d_queue_major;
-Pose pose_array_minor[2];
-uint8_t idx_pose_array_minor = 0;
+Vec2DQueue position_queue;
+Pose pose_array[2];
+uint8_t idx_pose_array = 0;
 
 bool time_elapsed_ms_50() {
     static uint32_t prev_millis = millis();
@@ -96,13 +96,13 @@ bool time_elapsed_ms_50() {
 }
 
 #define THRESHOLD_MINOR_ROT 0.03 // radians
-bool pose_achieved_minor()
+bool pose_achieved()
 { 
-    switch (idx_pose_array_minor) {
+    switch (idx_pose_array) {
     case 0: {
       // To transition to the first minor pose, the robot only need rotate. Therefore, to confirm that it has achieved its goal,
       // we simply ask wether the discrepancy is within a certain threshold.
-        return abs(pose_current.rotation - pose_array_minor->rotation) < THRESHOLD_MINOR_ROT;
+        return abs(pose_current.rotation - pose_array->rotation) < THRESHOLD_MINOR_ROT;
     }
     case 1: {
       // And now for the tricky bit
@@ -111,8 +111,8 @@ bool pose_achieved_minor()
       // We need a way to tell whether the robot has gone far enough in the direction of the last minor pose
       // without considering whether it ends up close to the desired destination, in case it has veered off course.
       // Vectors a & b describe the position of the robot at the first and second poses.      
-        Vec2D* a = (Vec2D*) pose_array_minor;
-        Vec2D* b = (Vec2D*) (pose_array_minor + 1);
+        Vec2D* a = (Vec2D*) pose_array;
+        Vec2D* b = (Vec2D*) (pose_array + 1);
       // Imagine a line going from a to b. Now imagine a line perpendicular to that line passing through b, called f(x).
       // We might ask whether the robot and point a are on opposite sides of this line and say that if so, it has gone far enough.
 
@@ -150,9 +150,9 @@ bool pose_achieved_minor()
     }
 }
 
-bool pose_achieved_major()
-{ // returns true if pose_current is close enough to the next goal pose (vec2d_queue_major.front()).
-    return pose_achieved_minor() && idx_pose_array_minor == 1;
+bool position_achieved()
+{ // returns true if pose_current is close enough to the next goal pose (position_queue.front()).
+    return pose_achieved() && idx_pose_array == 1;
 }
 
 //  ___       _        
@@ -175,14 +175,14 @@ bool obstacle_detected() {}
 // returns true if there is an obstacle.
 
 void stop() {
-    vec2d_queue_major.clear();
+    position_queue.clear();
     // set the next pose close by.
     // ...
-    /* Pose_enqueue_transition(&pose_current, &desired_vec2d, pose_array_minor); */
-    idx_pose_array_minor = 0;
+    /* Pose_enqueue_transition(&pose_current, &desired_vec2d, pose_array); */
+    idx_pose_array = 0;
 }
 // clears the pose queue and sets the next pose to be at or near the current position (pose_current)
-// by enqueuing the minor pose queue (pose_array_minor).
+// by enqueuing the minor pose queue (pose_array).
 
 void reroute() {}
 // Ultimate goal of this function is to fill up the pose queue with a new set up poses that describe the best guess at a
@@ -227,14 +227,14 @@ void update_state()
 
 void pid_correction_rotational() 
 {   
-    char pid_correction = pid_error_rotational(pose_current.rotation, (pose_array_minor + idx_pose_array_minor)->rotation); // positive correction means turn left
+    char pid_correction = pid_error_rotational(pose_current.rotation, (pose_array + idx_pose_array)->rotation); // positive correction means turn left
     motors_increment_velocity_left(0 - pid_correction);
     motors_increment_velocity_right(pid_correction);
 }
 
 void pid_correction_translational() 
 {
-    char pid_correction = pid_error_translational(pose_current.translation, (pose_array_minor + idx_pose_array_minor)->translation);
+    char pid_correction = pid_error_translational(pose_current.translation, (pose_array + idx_pose_array)->translation);
     motors_increment_velocity_left(pid_correction);
     motors_increment_velocity_right(pid_correction);
 }
@@ -252,8 +252,8 @@ bool time_elapsed_ms_1000()
 }
 
 AsyncLoop loop_state;
-AsyncLoop loop_poses_major;
-AsyncLoop loop_poses_minor;
+AsyncLoop loop_positions;
+AsyncLoop loop_poses;
 AsyncLoop loop_obstacle; 
 AsyncLoop loop_pid_rotational; 
 AsyncLoop loop_pid_translational;
@@ -262,7 +262,7 @@ void setup()
 {
     DEBUG_BEGIN(9600); // Needed to print to Serial Monitor.
     motors_init_pins();
-    Pose_enqueue_transition(&pose_current, &vec2d_final, pose_array_minor);
+    Pose_enqueue_transition(&pose_current, &vec2d_final, pose_array);
     DEBUG_PRINTLN(F("\n"));
     test_a_star();
 
@@ -271,23 +271,23 @@ void setup()
         .when((void*)time_elapsed_ms_50)
         .then((void*)update_state);
 
-    loop_poses_major
-        .when((void*)pose_achieved_major)
+    loop_positions
+        .when((void*)position_achieved)
         .then((void*)+[]() -> void { // Enqueue minor poses, dequeue major pose.
-                if (!(vec2d_queue_major.empty())) {
-                    Pose_enqueue_transition(&pose_current, vec2d_queue_major.front(), pose_array_minor);
-                    idx_pose_array_minor = 0;
-                    vec2d_queue_major.dequeue();
+                if (!(position_queue.empty())) {
+                    Pose_enqueue_transition(&pose_current, position_queue.front(), pose_array);
+                    idx_pose_array = 0;
+                    position_queue.dequeue();
                 }
             });
 
-    // In between two poses in the vec2d_queue_major, there are minor poses
+    // In between two positions in the position_queue, there are poses
     // which must be traversed
-    loop_poses_minor
-        .when((void*)pose_achieved_minor)
+    loop_poses
+        .when((void*)pose_achieved)
         .then((void*)+[]() -> void { // dequeue minor pose
-            if (idx_pose_array_minor == 0) {
-                ++idx_pose_array_minor;
+            if (idx_pose_array == 0) {
+                ++idx_pose_array;
             }
         });
 
@@ -295,7 +295,7 @@ void setup()
         .when((void*)obstacle_detected)
         .then((void*)stop)
         .when((void*)+[]() -> bool {
-            return idx_pose_array_minor == 1 && pose_achieved_minor();
+            return idx_pose_array == 1 && pose_achieved();
         })
         .then((void*)reroute);
 
@@ -315,8 +315,8 @@ void setup()
 void loop() 
 {
     loop_state();
-    loop_poses_major();
-    loop_poses_minor();
+    loop_positions();
+    loop_poses();
     loop_obstacle();
     loop_pid_rotational();
     loop_pid_translational();

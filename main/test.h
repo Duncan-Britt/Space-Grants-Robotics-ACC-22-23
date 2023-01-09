@@ -46,7 +46,7 @@ void test_a_star()
     case 0:
         grid_print_path(&grid, path, path_size);
         for (unsigned char i = 0; i < path_size; ++i) {
-            Serial.print(path[i]);
+            DEBUG_PRINT(path[i]);
             DEBUG_PRINT(F(" "));
         }
         DEBUG_PRINTLN(F(""));
@@ -58,7 +58,7 @@ void test_a_star()
         DEBUG_PRINTLN(F("Path exceeded max path size"));
         grid_print_path(&grid, path, path_size);
         for (unsigned char i = 0; i < path_size; ++i) {
-            Serial.print(path[i]);
+            DEBUG_PRINT(path[i]);
             DEBUG_PRINT(F(" "));
         }
         DEBUG_PRINTLN(F(""));
