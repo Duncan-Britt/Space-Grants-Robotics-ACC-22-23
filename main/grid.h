@@ -1,5 +1,5 @@
-#ifndef GUARD_astar_h
-#define GUARD_astar_h
+#ifndef GUARD_grid_h
+#define GUARD_grid_h
 
 #include <string.h>
 #include <stdlib.h>
@@ -73,8 +73,4 @@ void grid_idx_to_cartesian(const Grid* grid, const unsigned int i, int* x, int* 
     // The #'s are obstacles and the .'s are open spaces
 #endif
 
-#endif//GUARD_astar_h
-
-
-
-
+#endif//GUARD_grid_h

@@ -5,7 +5,7 @@
 #include <Arduino.h>
 #endif//ARDUINO
 
-#include "astar.h"
+#include "grid.h"
 #include "motors.h"
 #include "pose.h"
 #include "async.h"

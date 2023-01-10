@@ -1,4 +1,4 @@
-#include "astar.h"
+#include "grid.h"
 
 typedef struct Node {
     unsigned int grid_idx;
@@ -33,11 +33,14 @@ void pq_shift_up(Node* pq, int i);
 #ifdef DEBUG
 void node_print(Node* node);
 void pq_print(Node* pq, size_t size);
+void printBits(size_t const size, void const * const ptr);
 #define DEBUG_PRINT_NODE(node) node_print(node)
 #define DEBUG_PRINT_PQ(pq, size) pq_print(pq, size)
+#define DEBUG_PRINT_BITS(size, ptr) printBits(size, ptr);
 #else
 #define DEBUG_PRINT_NODE(node)
 #define DEBUG_PRINT_PQ(pq, size)
+#define DEBUG_PRINT_BITS(size, ptr)
 #endif
 //  _   _  _ ___      ___ ___ ___  _        __   
 // | \ |_ |_  |  |\ |  |   |   |  / \ |\ | (_  o 
@@ -46,22 +49,6 @@ void pq_print(Node* pq, size_t size);
 // ___     ___ _  _                  _           _ ___ ___  _        __ 
 //  |  |\ | | |_ |_) |\ |  /\  |    |_ | | |\ | /   |   |  / \ |\ | (_  
 // _|_ | \| | |_ | \ | \| /--\ |_   |  |_| | \| \_  |  _|_ \_/ | \| __)  
-
-
-void printBits(size_t const size, void const * const ptr)
-{
-    unsigned char *b = (unsigned char*) ptr;
-    unsigned char byte;
-    int i, j;
-    
-    for (i = size-1; i >= 0; i--) {
-        for (j = 7; j >= 0; j--) {
-            byte = (b[i] >> j) & 1;
-            DEBUG_PRINT(byte);
-        }
-    }
-    DEBUG_PRINTLN("");
-}
 
 int pq_parent(int i)
 {
@@ -154,6 +141,21 @@ void pq_print(Node* pq, size_t size)
         node_print(pq+i);
     }
     DEBUG_PRINTLN(F(""));
+}
+
+void printBits(size_t const size, void const * const ptr)
+{
+    unsigned char *b = (unsigned char*) ptr;
+    unsigned char byte;
+    int i, j;
+    
+    for (i = size-1; i >= 0; i--) {
+        for (j = 7; j >= 0; j--) {
+            byte = (b[i] >> j) & 1;
+            DEBUG_PRINT(byte);
+        }
+    }
+    DEBUG_PRINTLN("");
 }
 #endif//DEBUG
 
@@ -311,7 +313,7 @@ Err grid_find_path(const Grid* grid, const uint16_t start, const uint16_t dest, 
     // 3 2 1
     const int neighbors[8] = {1, grid->cols+1, grid->cols, grid->cols-1, -1, 0-grid->cols-1, 0-grid->cols, 0-grid->cols+1};
 
-    const size_t pq_max_size = 80; // EXAMINE THIS
+    const size_t pq_max_size = 60; // EXAMINE THIS
     const size_t explored_max_size = pq_max_size; // AND THIS!
 
     Node pq[pq_max_size];
