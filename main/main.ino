@@ -31,7 +31,7 @@
 //    current pose and the desired pose. Or rather, 2 PID algorithms. One for rotational discrepancy and 
 //    one for translational discrepancy.
 
-// HEADER FILES:
+// MODULES: (Updated Jan. 1)
 // _______________________________________________________________________________________
 // async.h: 
 // ========
@@ -100,15 +100,15 @@ bool pose_achieved()
 { 
     switch (idx_pose_array) {
     case 0: {
-      // To transition to the first minor pose, the robot only need rotate. Therefore, to confirm that it has achieved its goal,
+      // To transition to the first pose, the robot only need rotate. Therefore, to confirm that it has achieved its goal,
       // we simply ask wether the discrepancy is within a certain threshold.
         return abs(pose_current.rotation - pose_array->rotation) < THRESHOLD_MINOR_ROT;
     }
     case 1: {
       // And now for the tricky bit
-      // When the robot attempts to maintain its orientation and move straight ahead, to the second minor pose,
+      // When the robot attempts to maintain its orientation and move straight ahead, to the second pose,
       // it may do so imperfectly. It may veer off course some what if it fails to keep totally straight.
-      // We need a way to tell whether the robot has gone far enough in the direction of the last minor pose
+      // We need a way to tell whether the robot has gone far enough in the direction of the last pose
       // without considering whether it ends up close to the desired destination, in case it has veered off course.
       // Vectors a & b describe the position of the robot at the first and second poses.      
         Vec2D* a = (Vec2D*) pose_array;
@@ -191,7 +191,7 @@ void stop() {
     idx_pose_array = 0;
 }
 // clears the pose queue and sets the next pose to be at or near the current position (pose_current)
-// by enqueuing the minor pose queue (pose_array).
+// by enqueuing the pose queue (pose_array).
 
 void reroute() {}
 // Ultimate goal of this function is to fill up the pose queue with a new set up poses that describe the best guess at a
@@ -282,7 +282,7 @@ void setup()
 
     loop_positions
         .when((void*)position_achieved)
-        .then((void*)+[]() -> void { // Enqueue minor poses, dequeue major pose.
+        .then((void*)+[]() -> void { // Enqueue poses, dequeue position.
                 if (!(position_queue.empty())) {
                     Pose_enqueue_transition(&pose_current, position_queue.front(), pose_array);
                     idx_pose_array = 0;
