@@ -285,8 +285,9 @@ void setup()
     DEBUG_BEGIN(9600); // Needed to print to Serial Monitor.
     motors_init_pins();
     Pose_enqueue_transition(&pose_current, &vec2d_final, pose_array);
-    DEBUG_PRINTLN(F("\n"));
-    test_a_star();
+    DEBUG_PRINTLN(F("\n"));    
+    test_IDA_star();
+    /* test_a_star(); */
 
     loop_obstacle
         .when((void*)path_interrupted)

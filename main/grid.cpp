@@ -299,7 +299,62 @@ unsigned grid_distance(const Grid* grid, const unsigned int i, const unsigned in
     return round(10 * sqrt(pow((float)abs(jy - iy), 2) + pow((float)abs(jx - ix), 2)));    
 }
 
-Err grid_find_path_IDA_star(const Grid* grid, const uint16_t start, const uint16_t dest, uint16_t* path, uint8_t* path_size, const uint8_t max_path_size)
+Err IDA_star_rec(const Grid* grid, const uint16_t target, Node* parent, uint16_t* path, uint8_t* path_size,
+                 const uint8_t path_capacity, const uint8_t depth, const int neighbors[], const uint16_t fCost_threshold)
+{    
+    if (depth == path_capacity || parent->grid_idx == target) {
+        Node* node_ptr = parent;
+        for (int i = 0; node_ptr != NULL && *path_size < path_capacity; ++i) {
+            path[i] = node_ptr->grid_idx;
+            node_ptr = node_ptr->parent;
+            (*path_size)++;
+        }
+        
+        return parent->grid_idx == target ? 0 : -1; // return -1 to indicate that the full path was not found and the max path capacity was reached.
+    }
+
+    if (parent->gCost + parent->hCost > fCost_threshold) {
+        return -4;
+    }
+
+    bool capacity_reached = false;
+
+    for (char i = 0; i < 8; ++i) {
+        if (parent->grid_idx < grid->cols && i >= 5) continue; // first row
+        if (parent->grid_idx % grid->cols == 0 && i >= 3 && i <= 5) continue; // first column
+        if (parent->grid_idx % grid->cols == grid->rows - 1 && (i <= 1 || i == 7)) continue; // last column
+        if (parent->grid_idx / grid->cols == grid->rows - 1 && (i <= 3 && i >= 1)) continue; // last row
+        
+        uint16_t child_idx = parent->grid_idx + neighbors[i];            
+        if (grid_obstacle_at(grid, child_idx)) continue;
+
+        Node child = { .grid_idx = child_idx,
+                       .parent = parent,
+                       .gCost = parent->gCost + grid_distance(grid, parent->grid_idx, child_idx),
+                       .hCost = grid_distance(grid, child_idx, target) };
+        
+        const Err err = IDA_star_rec(grid, target, &child, path, path_size, path_capacity, depth + 1, neighbors, fCost_threshold);
+        
+        if (err == -1) {
+            capacity_reached = true;
+        }
+        else if (err == -4) {
+            // do nothing
+        }
+        else if (err == 0) {
+            // success!
+            return err;
+        }
+        else {
+            DEBUG_PRINTLN_TRACE("UNEXPECTED err");
+        }
+    }
+    
+    return capacity_reached ? -1 : -4;
+}
+
+// searches backwards from destinatio to start
+Err grid_find_path_IDA_star(const Grid* grid, const uint16_t start, const uint16_t dest, uint16_t* path, uint8_t* path_size, const uint8_t path_capacity)
 {
     if (grid_obstacle_at(grid, start)) {
         return -2;
@@ -312,93 +367,21 @@ Err grid_find_path_IDA_star(const Grid* grid, const uint16_t start, const uint16
     // 3 2 1
     const int neighbors[8] = {1, grid->cols+1, grid->cols, grid->cols-1, -1, 0-grid->cols-1, 0-grid->cols, 0-grid->cols+1};
     
-    // Like Iterative Deepening Depth First Search, but uses the fCost_threshold as the cut off instead of the depth.
-    
+    // Like Iterative Deepening Depth First Search, but uses the fCost_threshold as the cut off instead of the depth.    
     uint16_t fCost_threshold = 0;
 
-    while (true) {
-        
+    Node parent = { .grid_idx = dest, .parent = NULL, .gCost = 0, .hCost = grid_distance(grid, dest, start) };
+    
+    Err error = -4;
+    while (error == -4) {
+        error = IDA_star_rec(grid, start, &parent, path, path_size, path_capacity, 1, neighbors, fCost_threshold);
+        fCost_threshold += 10;
     }
-    
-    // const uint8_t stack_max_size = 60;
-    
-    // // nodes to visit    
-    // Node stack[stack_max_size]; // what should the max size be?
-    
-    // stack[0].grid_idx = dest;
-    // stack[0].parent = NULL;
-    // stack[0].gCost = 0;
-    // stack[0].hCost = 1;
-    // uint8_t stack_size = 1;
-        
-    // while (true) {
 
-    //     uint8_t parent_idx = stack_size - 1;
-    //     // adding the children to the stack provided that the grid spot is valid, unoccupied, and the corresponding fCost is below the fCost threshold
-    //     for (char i = 0; i < 0; ++i) {
-    //         // validating grid space
-    //         if (stack[stack_size-1].grid_idx < grid->cols && i >= 5) continue; // first row
-    //         if (stack[stack_size-1].grid_idx % grid->cols == 0 && i >= 3 && i <= 5) continue; // first column
-    //         if (stack[stack_size-1].grid_idx % grid->cols == grid->rows - 1 && (i <= 1 || i == 7)) continue; // last column
-    //         if (stack[stack_size-1].grid_idx / grid->cols == grid->rows - 1 && (i <= 3 && i >= 1)) continue; // last row
-            
-    //         size_t neighbor_idx = stack[stack_size - 1].grid_idx + neighbors[i];
-    //         if (grid_obstacle_at(grid, neighbor_idx)) continue;
-            
-    //         if (neighbor_idx == start) {
-    //             path[0] = neighbor_idx;                
-    //             (*path_size)++;
-    //             Node* node_ptr = stack + (stack_size - 1);
-    //             for (int i = 1; node_ptr != NULL && *path_size < max_path_size; ++i) {
-    //                 path[i] = node_ptr->grid_idx;                    
-    //                 node_ptr = node_ptr->parent;
-    //                 (*path_size)++;
-    //                 if (*path_size == max_path_size && node_ptr != NULL) {
-    //                     return -1;
-    //                 }
-    //             }                
-
-    //             return 0;            
-    //         }
-
-    //         unsigned gCost = (stack+parent_idx)->gCost + grid_distance(grid, (stack+parent_idx)->grid_idx, neighbor_idx);
-    //         unsigned hCost = grid_distance(grid, neighbor_idx, start);
-    //         unsigned fCost = gCost + hCost;
-
-    //         if (fCost <= fCost_threshold) {
-    //             stack[stack_size].grid_idx = neighbor_idx;
-    //             stack[stack_size].parent = stack+parent_idx;
-    //             stack[stack_size].gCost = gCost;
-    //             stack[stack_size].hCost = hCost;
-    //             ++stack_size;
-    //             if (stack_size == stack_max_size) {
-    //                 return -4;
-    //             }
-    //         }
-    //         else {
-    //             // we've exceeded the threshold.
-    //             // time to explore other areas
-    //             // perhaps if the there is nothing left on the stack then it's time to up rest and start from the beginnning with a larger threshold
-    //         }
-            
-            
-    //         // pq[pq_size].grid_idx = neighbor_idx;
-    //         // pq[pq_size].parent = explored+(explored_size-1);
-    //         // /* printf("adding parent => &pq[pq_size]: %x, &explored[explored_size-1]: %x\n", &(pq[pq_size]), &explored[explored_size-1]); */
-    //         // pq[pq_size].gCost = explored[explored_size-1].gCost + grid_distance(grid, explored[explored_size-1].grid_idx, neighbor_idx);
-    //         // pq[pq_size].hCost = grid_distance(grid, neighbor_idx, start);
-    //         // pq_shift_up(pq, pq_size);
-    //         // ++pq_size;
-    //         // if (pq_size == pq_max_size) {
-    //         //     return -4;
-    //         // }
-    //     }
-
-        
-    // }
+    return error;
 }
 
-Err grid_find_path(const Grid* grid, const uint16_t start, const uint16_t dest, uint16_t* path, uint8_t* path_size, const uint8_t max_path_size)
+Err grid_find_path_a_star(const Grid* grid, const uint16_t start, const uint16_t dest, uint16_t* path, uint8_t* path_size, const uint8_t max_path_size)
 {
     if (grid_obstacle_at(grid, start)) {
         return -2;

@@ -42,7 +42,7 @@ unsigned grid_distance(const Grid* grid, const unsigned int i, const unsigned in
 // -1: Path exceeded max path size.
 // -2: Invalid target destination. The grid indicates there is an obstacle in the way.
 // -3: Invalid start destination. The grid indicates there is an obstacle in the way. 
-Err grid_find_path(const Grid* grid, const uint16_t start, const uint16_t dest, uint16_t* path, uint8_t* path_size, const uint8_t max_path_size);
+Err grid_find_path_a_star(const Grid* grid, const uint16_t start, const uint16_t dest, uint16_t* path, uint8_t* path_size, const uint8_t max_path_size);
 
 // Iterative Deepening A* Search: Consumes less memory than regular A*
 Err grid_find_path_IDA_star(const Grid* grid, const uint16_t start, const uint16_t dest, uint16_t* path, uint8_t* path_size, const uint8_t max_path_size);
