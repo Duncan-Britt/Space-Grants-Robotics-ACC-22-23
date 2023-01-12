@@ -10,8 +10,8 @@ typedef char Err;
 
 typedef struct Grid {
     uint8_t* obstacles; // bit array
-    unsigned char cols; // [0, 255]
-    unsigned char rows; // [0, 255]
+    uint8_t cols; // [0, 255]
+    uint8_t rows; // [0, 255]
 } Grid;
 
 // 0's are open spaces and 1's are obstacles:
@@ -43,6 +43,9 @@ unsigned grid_distance(const Grid* grid, const unsigned int i, const unsigned in
 // -2: Invalid target destination. The grid indicates there is an obstacle in the way.
 // -3: Invalid start destination. The grid indicates there is an obstacle in the way. 
 Err grid_find_path(const Grid* grid, const uint16_t start, const uint16_t dest, uint16_t* path, uint8_t* path_size, const uint8_t max_path_size);
+
+// Iterative Deepening A* Search: Consumes less memory than regular A*
+Err grid_find_path_IDA_star(const Grid* grid, const uint16_t start, const uint16_t dest, uint16_t* path, uint8_t* path_size, const uint8_t max_path_size);
 
 // Predicate returns true if there is an obstacle at the given index.
 bool grid_obstacle_at(const Grid* grid, size_t idx);

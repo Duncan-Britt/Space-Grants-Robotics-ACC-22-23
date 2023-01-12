@@ -38,7 +38,7 @@
 // There is no multi-threading/multi-process support on the Arduino, so this code implementes an interface 
 // for defining distinct loops that will run asynchronously and independently of one another.
 
-// astar.h & astar.cpp 
+// Grid.h & Grid.cpp 
 // ===================
 // Defines an interface for plotting a path forward and avoiding obstacles. The territory is represented as
 // an occupancy grid. The A* (star) path finding algorithm is used to search for the shortest path to the
@@ -161,6 +161,23 @@ bool position_achieved()
 
 // Tests!
 
+// Write a function to find the discrepancy between 2 angles in radians. (Consider 2π - 0, and similar. Should be 0 because
+// 2π = 0). Should return a positive or negative number to indicate counter clockwise or clockwise, and the angle discrepancy
+// should always the shortest possible, therefore less than or equal to π radians.
+
+// Figure out how to translate between poses in the global and local reference frame => Given a position (x,y) relative to 
+// the robot and the current pose of the robot in a global coordinate system, (x, y, θ), convert the coordinates of the
+// position to a coordinate point in the global coordinate system.
+
+// Write a function which answers the question of whether the robots path ahead is obstructed by some obstacle - such as
+// a wall, mound, or a ditch - given the current state of the robot (latest sensor data, current pose, and planned path).
+// - Given that the robot is doing tank turns, we don't have to worry about obstacles while turning. We're looking for
+// obstacles that lie in front (or behind?) of the robot, but only when the robot is going forward.
+
+// Implement a function which, given a grid and path on the grid, removes the unnecessary path nodes.
+// This is to say, if a series of nodes on the path are along a straight line, only the ends of the line
+// should remain.
+
 // Reimplement A* search algorithm using IDA* to reduce memory consumption
 // https://en.wikipedia.org/wiki/Iterative_deepening_A*
 // Also consider sampling based methods e.g. Probabilistic Roadmaps (PRMs)
@@ -169,19 +186,12 @@ bool position_achieved()
 // Can implement multiple path finding algorithms and be able to test among them. RRT* looks promising
 // https://ieeexplore.ieee.org/document/6617944 -> this is about an RRT implementation for limited memory consumption 
 
-// Figure out how to translate between poses in the global and local reference frame
-// Figure out the dimensions of the occupancy grid and the cells within which can be used to represent
-// the surroundings.  Look in "astar.h".
+// Consider non uniform cell representation in occupancy grid:
+// https://ieeexplore.ieee.org/document/9304571
+// This could save a lot of memory.
 
-// Need a function to find the discrepancy between 2 angles. (Consider 2π - 0, and similar). Should return
-// a positive or negative number to indicate counter clockwise or clockwise.
-
-// Implement a function which, given a grid and path on the grid, removes the unnecessary path nodes.
-// This is to say, if a series of nodes on the path are along a straight line, only the ends of the line
-// should remain.
-
-bool obstacle_detected() {}
-// returns true if there is an obstacle.
+bool path_interrupted() {}
+// returns true if there is an obstacle in the way.
 
 void stop() {
     position_queue.clear();
@@ -228,12 +238,6 @@ char pid_error_translational(Vec2D pos_current, Vec2D pos_desired) {}
 //  |_ ._   _|    |  _    | \  _    
 //  |_ | | (_|    | (_)   |_/ (_) o
 
-void update_state() 
-{
-    update_sensor_data();
-    pose_current_update();
-}
-
 void pid_correction_rotational() 
 {   
     char pid_correction = pid_error_rotational(pose_current.rotation, (pose_array + idx_pose_array)->rotation); // positive correction means turn left
@@ -248,6 +252,17 @@ void pid_correction_translational()
     motors_increment_velocity_right(pid_correction);
 }
 
+void update_perception_localize_and_pid()
+{
+    update_sensor_data();        // perception
+    pose_current_update();       // localization
+    pid_correction_rotational(); // motion control
+    // Only perform translational correction if on the second pose
+    if (idx_pose_array == 1) {
+        pid_correction_translational();
+    }
+}
+
 bool time_elapsed_ms_1000()
 {
     static uint32_t prev_millis = millis();
@@ -260,12 +275,10 @@ bool time_elapsed_ms_1000()
     return false; 
 }
 
-AsyncLoop loop_state;
+AsyncLoop loop_obstacle;
 AsyncLoop loop_positions;
 AsyncLoop loop_poses;
-AsyncLoop loop_obstacle; 
-AsyncLoop loop_pid_rotational; 
-AsyncLoop loop_pid_translational;
+AsyncLoop loop_pid;
 
 void setup() 
 {
@@ -275,10 +288,13 @@ void setup()
     DEBUG_PRINTLN(F("\n"));
     test_a_star();
 
-    
-    loop_state
-        .when((void*)time_elapsed_ms_50)
-        .then((void*)update_state);
+    loop_obstacle
+        .when((void*)path_interrupted)
+        .then((void*)stop)
+        .when((void*)+[]() -> bool {
+                return idx_pose_array == 1 && pose_achieved();
+            })
+        .then((void*)reroute);
 
     loop_positions
         .when((void*)position_achieved)
@@ -292,29 +308,13 @@ void setup()
 
     // In between two positions in the position_queue, there are poses
     // which must be traversed
-    loop_poses
+    loop_poses // go to second pose when first is achieved
         .when((void*)pose_achieved)
-        .then((void*)+[]() -> void { // dequeue minor pose
-            if (idx_pose_array == 0) {
-                ++idx_pose_array;
-            }
-        });
-
-    loop_obstacle
-        .when((void*)obstacle_detected)
-        .then((void*)stop)
-        .when((void*)+[]() -> bool {
-            return idx_pose_array == 1 && pose_achieved();
-        })
-        .then((void*)reroute);
-
-    loop_pid_rotational
+        .then((void*)+[]() -> void { idx_pose_array = 1; });
+    
+    loop_pid
         .when((void*)time_elapsed_ms_50)
-        .then((void*)pid_correction_rotational);
-
-    loop_pid_translational
-        .when((void*)time_elapsed_ms_50)
-        .then((void*)pid_correction_translational);
+        .then((void*)update_perception_localize_and_pid);
 
     DEBUG_PRINTLN_TRACE(freeRam());
     delay(1000);
@@ -323,12 +323,10 @@ void setup()
 
 void loop() 
 {
-    loop_state();
+    loop_obstacle();
     loop_positions();
     loop_poses();
-    loop_obstacle();
-    loop_pid_rotational();
-    loop_pid_translational();
+    loop_pid();
 }
 
 NON_ARDUINO_MAIN
