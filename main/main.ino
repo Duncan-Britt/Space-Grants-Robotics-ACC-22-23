@@ -12,6 +12,7 @@
 
 // using namespace Geometry;
 // using namespace BLA;
+// ^^^ could be used for linear algebra stuff?
 
 //   _        _  _      ___  _        
 //  / \ \  / |_ |_) \  / |  |_ \    / 
