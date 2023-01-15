@@ -46,7 +46,7 @@ int digitalRead(int pin, int value);
 void digitalWrite(int pin, int value);
 void pinMode(int x, int mode);
 
-#ifdef __APPLE__ 
+#ifdef __unix 
 #include <unistd.h>
 // untested
 #define delay(x) sleep((int)((float)x / 1000.0))
