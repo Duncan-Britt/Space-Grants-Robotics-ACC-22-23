@@ -179,13 +179,12 @@ bool position_achieved()
 // This is to say, if a series of nodes on the path are along a straight line, only the ends of the line
 // should remain.
 
-// Reimplement A* search algorithm using IDA* to reduce memory consumption
-// https://en.wikipedia.org/wiki/Iterative_deepening_A*
-// Also consider sampling based methods e.g. Probabilistic Roadmaps (PRMs)
+// Consider sampling based methods for path planning e.g. Probabilistic Roadmaps (PRMs)
 // Randomly Expanding Random Trees (RRT or RRT*) https://youtu.be/XIBP0vCKl78?t=2307
 // Potential Fields
 // Can implement multiple path finding algorithms and be able to test among them. RRT* looks promising
 // https://ieeexplore.ieee.org/document/6617944 -> this is about an RRT implementation for limited memory consumption 
+// tutorial explains RRT: https://www.youtube.com/watch?v=OXikozpLFGo
 
 // Consider non uniform cell representation in occupancy grid:
 // https://ieeexplore.ieee.org/document/9304571
