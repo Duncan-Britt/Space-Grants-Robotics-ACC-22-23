@@ -162,6 +162,12 @@ bool position_achieved()
 
 // Tests!
 
+// Get 9DOF working -> Implement PID -> Test with arbitrary paths.
+
+// Consider the case where an obstacle prevents the robot from rotating in place.
+       // Back up to a pose in direction of previous position
+       // (Remember newfound obstacles)
+
 // Write a function to find the discrepancy between 2 angles in radians. (Consider 2π - 0, and similar. Should be 0 because
 // 2π = 0). Should return a positive or negative number to indicate counter clockwise or clockwise, and the angle discrepancy
 // should always the shortest possible, therefore less than or equal to π radians.
@@ -170,7 +176,7 @@ bool position_achieved()
 // the robot and the current pose of the robot in a global coordinate system, (x, y, θ), convert the coordinates of the
 // position to a coordinate point in the global coordinate system.
 
-// Write a function which answers the question of whether the robots path ahead is obstructed by some obstacle - such as
+// Write a function which answers the question of whether the robots path is interrupted by some obstacle - such as
 // a wall, mound, or a ditch - given the current state of the robot (latest sensor data, current pose, and planned path).
 // - Given that the robot is doing tank turns, we don't have to worry about obstacles while turning. We're looking for
 // obstacles that lie in front (or behind?) of the robot, but only when the robot is going forward.
@@ -190,10 +196,32 @@ bool position_achieved()
 // https://ieeexplore.ieee.org/document/9304571
 // This could save a lot of memory.
 
-bool path_interrupted() {}
-// returns true if there is an obstacle in the way.
+uint8_t rn = 0; // most recent distance reading for downward (hole) sensor
+uint8_t rm = 0; // second most recent distance reading for downward (hole) sensor
+uint8_t rl = 0; // third most recent distance reading for downard (hole) sensor
+const uint8_t r_threshold = 100; // WHAT SHOULD THIS BE? WE DON'T KNOW YET
+const uint8_t dr_threshold = 15; // WHAT SHOULD THIS BE? WE DON'T KNOW YET
+const uint8_t r_expected = 80; // WHAT SHOULD THIS BE? WE DON'T KNOW YET
+bool bumped = false;
 
-void stop() {
+bool path_interrupted_by_hole()
+{
+    return rn > r_threshold &&
+        (rn - rm > dr_threshold &&
+         rn - rl > dr_threshold);
+}
+
+bool path_interrupted()
+{ // returns true if there is an obstacle in the way.
+    if (bumped) {
+        bumped = false;
+        return true;
+    }
+
+    return path_interrupted_by_hole();
+}
+
+void stop_and_update_obstacles() {
     position_queue.clear();
     // set the next pose close by.
     // ...
@@ -291,7 +319,7 @@ void setup()
 
     loop_obstacle
         .when((void*)path_interrupted)
-        .then((void*)stop)
+        .then((void*)stop_and_update_obstacles)
         .when((void*)+[]() -> bool {
                 return idx_pose_array == 1 && pose_achieved();
             })
