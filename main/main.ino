@@ -4,6 +4,10 @@
 #include "async.h"
 #include "debug.h"
 
+#include <Wire.h>
+#include <Adafruit_Sensor.h>
+#include <Adafruit_BNO055.h>
+
 #ifdef DEBUG
 #include "test.h" // Used for testing
 #endif//DEBUG
@@ -88,7 +92,7 @@ uint8_t idx_pose_array = 0;
 bool time_elapsed_ms_50() {
     static uint32_t prev_millis = millis();
 
-    if (millis() - prev_millis >= 50) {
+    if (millis() - prev_millis >= 1000) {
          prev_millis = millis();
         return true;
     }
@@ -248,7 +252,37 @@ void pose_current_update() {}
 // https://www.youtube.com/watch?v=ZW7T6EFyYnc
 // Modify pose_current accordingly.
 
-void update_sensor_data() {}
+Adafruit_BNO055 bno = Adafruit_BNO055(55, 0x28);
+
+void update_sensor_data() 
+{
+    sensors_event_t orientationData , linearAccelData;
+    bno.getEvent(&orientationData, Adafruit_BNO055::VECTOR_EULER);
+    //  bno.getEvent(&angVelData, Adafruit_BNO055::VECTOR_GYROSCOPE);
+    bno.getEvent(&linearAccelData, Adafruit_BNO055::VECTOR_LINEARACCEL);
+
+    //velocity = accel*dt (dt in seconds)
+    //position = 0.5*accel*dt^2            //sample rate = 50
+    double ACCEL_VEL_TRANSITION =  (double)(50) / 1000.0;
+    double ACCEL_POS_TRANSITION = 0.5 * ACCEL_VEL_TRANSITION * ACCEL_VEL_TRANSITION;
+    double DEG_2_RAD = 0.01745329251; //trig functions require radians, BNO055 outputs degrees
+
+    double xPos = xPos + ACCEL_POS_TRANSITION * linearAccelData.acceleration.x;
+    double yPos = yPos + ACCEL_POS_TRANSITION * linearAccelData.acceleration.y;
+
+    // velocity of sensor in the direction it's facing
+    double headingVel = ACCEL_VEL_TRANSITION * linearAccelData.acceleration.x / cos(DEG_2_RAD * orientationData.orientation.x);
+
+    DEBUG_PRINT("Heading: ");
+    DEBUG_PRINTLN(orientationData.orientation.x);
+    DEBUG_PRINT("Position: ");
+    DEBUG_PRINT(xPos);
+    DEBUG_PRINT(" , ");
+    DEBUG_PRINTLN(yPos);
+    DEBUG_PRINT("Speed: ");
+    DEBUG_PRINTLN(headingVel);
+    DEBUG_PRINTLN("-------");
+}
 // Query the sensors on the robot. Set global variables associated with sensor data according to the latest reading.
 
 char pid_error_rotational(double rot_current, double rot_desired) {}
@@ -311,11 +345,20 @@ AsyncLoop loop_pid;
 void setup() 
 {
     DEBUG_BEGIN(9600); // Needed to print to Serial Monitor.
+
+    while (!Serial) delay(10);  // wait for serial port to open!
+  
+    if (!bno.begin())
+    {
+      DEBUG_PRINTLN("No BNO055 detected");
+      while (1);
+    }
+
     motors_init_pins();
     Pose_enqueue_transition(&pose_current, &vec2d_final, pose_array);
-    DEBUG_PRINTLN(F("\n"));    
-    test_IDA_star();
-    /* test_a_star(); */
+    DEBUG_PRINTLN(F("\n"));
+    /* test_IDA_star(); */
+    test_a_star();
 
     loop_obstacle
         .when((void*)path_interrupted)
