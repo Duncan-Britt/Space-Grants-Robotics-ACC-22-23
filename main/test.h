@@ -18,10 +18,33 @@
 ...##...\n\
 ....#...\n\
 ....#...\n\
-....###.\n\
+....####\n\
 ........\n\
 ........"
 #define DEBUG_GRID_STRING_SIZE 72
+
+void test_motors()
+{
+    motors_set_velocity(0);
+    delay(5000);
+    motors_set_velocity(100);
+    delay(5000);
+    motors_set_velocity(1);
+    delay(5000);
+    motors_set_velocity(-1);
+    delay(5000);
+    motors_set_velocity(-100);
+    delay(5000); 
+    // turn right
+    motors_set_velocity_left(50);
+    motors_set_velocity_right(-50);
+    delay(5000);
+    // turn left
+    motors_set_velocity_left(-50);
+    motors_set_velocity_right(50);
+    delay(5000);
+    motors_set_velocity(0);
+}
 
 void test_IDA_star()
 {
