@@ -1,4 +1,4 @@
-#include "SharpIR.h"
+// #include "SharpIR.h"
 #include "motors.h"
 #include "pose.h"
 #include "async.h"
@@ -79,7 +79,7 @@
 #define IRPin A0
 #define MODEL 1080
 // Create a new instance of the SharpIR class:
-SharpIR sensor_IR = SharpIR(IRPin, MODEL);
+// SharpIR sensor_IR = SharpIR(IRPin, MODEL);
 // querry IR sensor data: sensor_IR.distance();
 // -> returns an int type value that is the distance in centimeters from the sensor and the object in front of it.
 
@@ -257,12 +257,13 @@ void pose_current_update() {}
 void update_sensor_data() 
 {
 
-      if (sensor_IR.distance() < 40) {
-        motors_set_velocity(0);
-      } else {
-        motors_set_velocity(100);
-      }
-      DEBUG_PRINTLN(sensor_IR.distance());
+      // if (sensor_IR.distance() < 40) {
+      //   motors_set_velocity(0);
+      // } else {
+      //   motors_set_velocity(100);
+      // }
+      // DEBUG_PRINTLN(sensor_IR.distance());
+      
     /* sensors_event_t orientationData , linearAccelData; */
     /* bno.getEvent(&orientationData, Adafruit_BNO055::VECTOR_EULER); */
     /* //  bno.getEvent(&angVelData, Adafruit_BNO055::VECTOR_GYROSCOPE); */
@@ -394,7 +395,8 @@ void setup()
         .then((void*)update_perception_localize_and_pid);
 
     DEBUG_PRINTLN_TRACE(freeRam());
-    test_IDA_star();
+    // test_IDA_star();
+    test_a_star();
     DEBUG_PRINTLN_TRACE(freeRam());
     test_motors();
 }

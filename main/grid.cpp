@@ -1,10 +1,10 @@
 #include "grid.h"
 
 typedef struct Node {
-    unsigned int grid_idx;
+    uint16_t grid_idx;
     Node* parent;
-    unsigned gCost;
-    unsigned hCost; // NOTE: Once max cols and rows are determined, the bits used for this can be restricted
+    uint16_t gCost;
+    uint16_t hCost; // NOTE: Once max cols and rows are determined, the bits used for this can be restricted
     bool operator<(Node o) {
         return (gCost + hCost) < (o.gCost + o.hCost);
     }
@@ -25,10 +25,10 @@ typedef struct Node {
 int pq_parent(int i);
 int pq_left_child(int i);
 int pq_right_child(int i);
-void pq_shift_down(Node* pq, const size_t size, const unsigned int i);
+void pq_shift_down(Node* pq, const size_t size, const uint16_t i);
 void node_copy(Node* orig, Node* cpy);
 void pq_dequeue(Node* pq, size_t* size, Node* result);
-void pq_shift_up(Node* pq, int i);
+void pq_shift_up(Node* pq, int16_t i);
 
 #ifdef DEBUG
 void node_print(Node* node);
@@ -65,18 +65,18 @@ int pq_right_child(int i)
     return (2 * i) + 2;
 }
 
-void pq_shift_down(Node* pq, const size_t size, unsigned int i)
+void pq_shift_down(Node* pq, const size_t size, uint16_t i)
 {
-    unsigned int minIndex = i;
+    uint16_t minIndex = i;
 
     while (true) {
-        unsigned int l = pq_left_child(i);
+        uint16_t l = pq_left_child(i);
 
         if (l < size && pq[l] < pq[minIndex]) {
             minIndex = l;
         }
 
-        unsigned int r = pq_right_child(i);
+        uint16_t r = pq_right_child(i);
 
         if (r < size && pq[r] < pq[minIndex]) {
             minIndex = r;
@@ -110,10 +110,10 @@ void pq_dequeue(Node* pq, size_t* size, Node* result)
     pq_shift_down(pq, *size, 0);
 }
 
-void pq_shift_up(Node* pq, int i)
+void pq_shift_up(Node* pq, int16_t i)
 {
     while (i > 0 && pq[pq_parent(i)] > pq[i]) {
-        int parent_i = pq_parent(i);
+        int16_t parent_i = pq_parent(i);
         Node temp = pq[i];
         pq[i] = pq[parent_i];
         pq[parent_i] = temp;
@@ -125,13 +125,11 @@ void pq_shift_up(Node* pq, int i)
 #ifdef DEBUG
 void node_print(Node* node)
 {
-    // printf("[gC:%u gI:%u]", node->gCost, node->grid_idx);
-    DEBUG_PRINTLN(F("node_print needs to be reimplemented"));
-    DEBUG_PRINT("[gC:");
+    DEBUG_PRINT(F("[gC:"));
     DEBUG_PRINT(node->gCost);
-    DEBUG_PRINT(" gI:");
+    DEBUG_PRINT(F(" gI:"));
     DEBUG_PRINT(node->grid_idx);
-    DEBUG_PRINTLN("]");
+    DEBUG_PRINTLN(F("]"));
 }
 
 void pq_print(Node* pq, size_t size)
@@ -145,9 +143,9 @@ void pq_print(Node* pq, size_t size)
 
 void printBits(size_t const size, void const * const ptr)
 {
-    unsigned char *b = (unsigned char*) ptr;
-    unsigned char byte;
-    int i, j;
+    uint8_t *b = (uint8_t*) ptr;
+    uint8_t byte;
+    int16_t i, j;
     
     for (i = size-1; i >= 0; i--) {
         for (j = 7; j >= 0; j--) {
@@ -223,7 +221,7 @@ Err grid_init_str(char* s, Grid* grid)
 {
     grid->cols = 0;
     grid->rows = 0;
-    char end_row_found = 0;
+    uint8_t end_row_found = 0;
     for (size_t i = 0; i < strlen(s); ++i) {
         if (s[i] == '\n') {
             end_row_found = 1;
@@ -236,7 +234,7 @@ Err grid_init_str(char* s, Grid* grid)
         }
     }
     grid->rows++;
-    size_t grid_size = (grid->cols * grid->rows * sizeof(char)) / 8 + 1;
+    size_t grid_size = (grid->cols * grid->rows * sizeof(uint8_t)) / 8 + 1;
     grid->obstacles = (uint8_t*) malloc(grid_size);
     for (size_t i = 0; i < grid_size; ++i) {
         grid->obstacles[i] = 0;
@@ -245,8 +243,8 @@ Err grid_init_str(char* s, Grid* grid)
     char delim[1] = {'\n'};
     char* row = strtok(s, delim);
     
-    int j = 0;  // byte index
-    char k = 0; // bit index
+    int16_t j = 0;  // byte index
+    uint8_t k = 0; // bit index
     while (row != NULL) {
         for (size_t i = 0; i < strlen(row); ++i) {
             switch (row[i]) {
@@ -281,27 +279,45 @@ Err grid_init_str(char* s, Grid* grid)
 }
 #endif//DEBUG
 
-void grid_idx_to_cartesian(const Grid* grid, const unsigned int i, int* x, int* y)
+void grid_idx_to_cartesian(const Grid* grid, const uint16_t i, int16_t* x, int16_t* y)
 {
     *x = i % grid->cols;
     *y = i / grid->cols;    
 }
 
-unsigned grid_distance(const Grid* grid, const unsigned int i, const unsigned int j)
+uint16_t grid_distance(const Grid* grid, const uint16_t i, const uint16_t j)
 {
-    int ix;
-    int iy;
+    int16_t ix;
+    int16_t iy;
     grid_idx_to_cartesian(grid, i, &ix, &iy);
-    int jx;
-    int jy;
+    int16_t jx;
+    int16_t jy;
     grid_idx_to_cartesian(grid, j, &jx, &jy);
 
     return round(10 * sqrt(pow((float)abs(jy - iy), 2) + pow((float)abs(jx - ix), 2)));    
 }
 
+// String utility function
+// void str_repeat(char* src, char dest[], uint8_t reps)
+// {
+//     uint8_t src_size = 0;
+//     for (uint8_t i = 0; true; ++i) {
+//         if (src[i] == '\0') {
+//             break;
+//         }
+//         ++src_size;
+//     }
+    
+//     uint8_t i;
+//     for (i = 0; i < reps * src_size; ++i) {
+//         dest[i] = src[i % src_size];
+//     }
+//     dest[i] = '\0';
+// }
+
 Err IDA_star_rec(const Grid* grid, const uint16_t target, Node* parent, uint16_t* path, uint8_t* path_size,
-                 const uint8_t path_capacity, const uint8_t depth, const int neighbors[], const uint16_t fCost_threshold)
-{    
+                 const uint8_t path_capacity, const uint8_t depth, const int16_t neighbors[], const uint16_t fCost_threshold)
+{   
     if (depth == path_capacity || parent->grid_idx == target) {
         Node* node_ptr = parent;
         for (int i = 0; node_ptr != NULL && *path_size < path_capacity; ++i) {
@@ -309,7 +325,7 @@ Err IDA_star_rec(const Grid* grid, const uint16_t target, Node* parent, uint16_t
             node_ptr = node_ptr->parent;
             (*path_size)++;
         }
-        
+        DEBUG_PRINTLN(parent->grid_idx);
         return parent->grid_idx == target ? 0 : -1; // return -1 to indicate that the full path was not found and the max path capacity was reached.
     }
 
@@ -319,18 +335,18 @@ Err IDA_star_rec(const Grid* grid, const uint16_t target, Node* parent, uint16_t
 
     bool capacity_reached = false;
 
-    for (char i = 0; i < 8; ++i) {
+    for (int8_t i = 0; i < 8; ++i) {
         if (parent->grid_idx < grid->cols && i >= 5) continue; // first row
         if (parent->grid_idx % grid->cols == 0 && i >= 3 && i <= 5) continue; // first column
-        if (parent->grid_idx % grid->cols == grid->rows - 1 && (i <= 1 || i == 7)) continue; // last column
+        if (parent->grid_idx % grid->cols == grid->cols - 1 && (i <= 1 || i == 7)) continue; // last column
         if (parent->grid_idx / grid->cols == grid->rows - 1 && (i <= 3 && i >= 1)) continue; // last row
         
-        uint16_t child_idx = parent->grid_idx + neighbors[i];            
+        uint16_t child_idx = (int16_t)parent->grid_idx + neighbors[i];            
         if (grid_obstacle_at(grid, child_idx)) continue;
 
         Node child = { .grid_idx = child_idx,
                        .parent = parent,
-                       .gCost = parent->gCost + grid_distance(grid, parent->grid_idx, child_idx),
+                       .gCost = (uint16_t)(parent->gCost + grid_distance(grid, parent->grid_idx, child_idx)),
                        .hCost = grid_distance(grid, child_idx, target) };
         
         const Err err = IDA_star_rec(grid, target, &child, path, path_size, path_capacity, depth + 1, neighbors, fCost_threshold);
@@ -363,9 +379,10 @@ Err grid_find_path_IDA_star(const Grid* grid, const uint16_t start, const uint16
         return -3;
     }
     // 5 6 7
-    // 4 X 0
+    // 4 X 0 
     // 3 2 1
-    const int neighbors[8] = {1, grid->cols+1, grid->cols, grid->cols-1, -1, 0-grid->cols-1, 0-grid->cols, 0-grid->cols+1};
+           
+    const int16_t neighbors[8] = {1, (int16_t)((int)grid->cols+1), (int16_t)grid->cols, (int16_t)((int)grid->cols-1), -1, (int16_t)((0-grid->cols)-1), (int16_t)(0-grid->cols), (int16_t)(0-grid->cols+1)};
     
     // Like Iterative Deepening Depth First Search, but uses the fCost_threshold as the cut off instead of the depth.    
     uint16_t fCost_threshold = 0;
@@ -392,10 +409,23 @@ Err grid_find_path_a_star(const Grid* grid, const uint16_t start, const uint16_t
     // 5 6 7
     // 4 X 0
     // 3 2 1
-    const int neighbors[8] = {1, grid->cols+1, grid->cols, grid->cols-1, -1, 0-grid->cols-1, 0-grid->cols, 0-grid->cols+1};
+    // const int16_t neighbors[8] = {1, (int16_t)grid->cols+1, (int16_t)grid->cols, (int16_t)((int)grid->cols-1), -1, (int16_t)(0-(int)grid->cols-1), (int16_t)(0-(int)grid->cols), (int16_t)(0-(int)grid->cols+1)};
+    int16_t neighbors[8];
+    neighbors[0] = 1;
+    neighbors[1] = grid->cols + 1;
+    neighbors[2] = grid->cols;
+    neighbors[3] = grid->cols - 1;
+    neighbors[4] = -1;
+    neighbors[5] = 0 - grid->cols - 1;
+    neighbors[6] = 0 - grid->cols;
+    neighbors[7] = 0 - grid->cols + 1;
 
-    const uint8_t pq_max_size = 60; // EXAMINE THIS
-    const uint8_t explored_max_size = pq_max_size; // AND THIS!
+#if defined(ARDUINO_AVR_UNO)
+    const uint16_t pq_max_size = 60;
+#else
+    const uint16_t pq_max_size = 800;
+#endif
+    const uint16_t explored_max_size = pq_max_size; 
 
     Node pq[pq_max_size];
     pq[0].grid_idx = dest;
@@ -405,7 +435,7 @@ Err grid_find_path_a_star(const Grid* grid, const uint16_t start, const uint16_t
     size_t pq_size = 1;
     
     Node explored[explored_max_size];
-    uint8_t explored_size = 0;
+    uint16_t explored_size = 0;
 
     while (pq_size != 0) {
         if (explored_size >= explored_max_size) {
@@ -414,10 +444,10 @@ Err grid_find_path_a_star(const Grid* grid, const uint16_t start, const uint16_t
         pq_dequeue(pq, &pq_size, explored + explored_size);
         explored_size++;
         
-        for (char i = 0; i < 8; ++i) {
+        for (uint8_t i = 0; i < 8; ++i) {
             if (explored[explored_size-1].grid_idx < grid->cols && i >= 5) continue; // first row
             if (explored[explored_size-1].grid_idx % grid->cols == 0 && i >= 3 && i <= 5) continue; // first column
-            if (explored[explored_size-1].grid_idx % grid->cols == grid->rows - 1 && (i <= 1 || i == 7)) continue; // last column
+            if (explored[explored_size-1].grid_idx % grid->cols == grid->cols - 1 && (i <= 1 || i == 7)) continue; // last column
             if (explored[explored_size-1].grid_idx / grid->cols == grid->rows - 1 && (i <= 3 && i >= 1)) continue; // last row
         
             size_t neighbor_idx = explored[explored_size - 1].grid_idx + neighbors[i];            
@@ -451,7 +481,7 @@ Err grid_find_path_a_star(const Grid* grid, const uint16_t start, const uint16_t
             }                        
             // If so, the gCost and parent may need to be updated to reflect a lower cost path
             if (in_pq) { // when switching to using fCost, this needs to be updated
-                unsigned new_gCost = explored[explored_size-1].gCost + grid_distance(grid, explored[explored_size-1].grid_idx, neighbor_idx);
+                uint16_t new_gCost = explored[explored_size-1].gCost + grid_distance(grid, explored[explored_size-1].grid_idx, neighbor_idx);
                 if (new_gCost < pq[pq_idx].gCost) {
                     pq[pq_idx].gCost = new_gCost;
                     pq[pq_idx].parent = explored+(explored_size-1);

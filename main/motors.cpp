@@ -4,13 +4,13 @@
 //  |  |\ | | |_ |_) |\ |  /\  |  
 // _|_ | \| | |_ | \ | \| /--\ |_
 
-static const byte pin_left_fw = 8; // in3 or in1?
-static const byte pin_left_bw = 7; // in4 or in2?
-static const byte pin_left_speed = 9; // enB or enA?
+static const byte pin_left_fw = 8; // in1
+static const byte pin_left_bw = 7; // in2
+static const byte pin_left_speed = 9; // enA
 
-static const byte pin_right_fw = 4; // in3 or in1?
-static const byte pin_right_bw = 5; // in4 or in2?
-static const byte pin_right_speed = 3; // enB or enA?
+static const byte pin_right_fw = 4; // in4
+static const byte pin_right_bw = 5; // in3
+static const byte pin_right_speed = 3; // enB
 
 static char current_velocity_left = 0;
 static char current_velocity_right = 0;

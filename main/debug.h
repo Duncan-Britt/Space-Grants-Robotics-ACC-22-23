@@ -14,7 +14,6 @@ int freeRam();
 #include <cmath>
 #include <stdlib.h>
 #include <cstdint>
-#include <cstdint>
 
 typedef uint8_t byte;
 typedef uint16_t word;

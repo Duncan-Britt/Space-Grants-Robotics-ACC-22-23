@@ -55,7 +55,7 @@ SharpIR::SharpIR(int irPin, long sensorModel) {
     // Define pin as Input
     pinMode (s_irPin, INPUT);
     
-    #ifdef ARDUINO
+    #if defined(ARDUINO_AVR_UNO) || defined(__AVR_ATmega1280__) || defined(__AVR_ATmega2560)
       analogReference(DEFAULT);
     #endif
 }

@@ -6,7 +6,7 @@
 #include <math.h>
 #include "debug.h"
 
-typedef char Err;
+typedef int8_t Err;
 
 typedef struct Grid {
     uint8_t* obstacles; // bit array
@@ -29,7 +29,7 @@ typedef struct Grid {
 // 15 16 17 18 19
 
 // Euclidean distance beteen two spaces on grid, indicated by their indeces.
-unsigned grid_distance(const Grid* grid, const unsigned int i, const unsigned int j);
+uint16_t grid_distance(const Grid* grid, const uint16_t i, const uint16_t j);
 
 // Implementation of the A* (star) algorithm for path finding.
 // 4th argument should be an array of unsigned integers for storing the resulting path.
@@ -52,7 +52,7 @@ bool grid_obstacle_at(const Grid* grid, size_t idx);
 
 // Convert from grid index to (x,y) where the origin is at i = 0.
 // All values for x and y >= 0.
-void grid_idx_to_cartesian(const Grid* grid, const unsigned int i, int* x, int* y);
+void grid_idx_to_cartesian(const Grid* grid, const uint16_t i, int16_t* x, int16_t* y);
 
 // Pretty Print frunctions for debugging
 #ifdef DEBUG

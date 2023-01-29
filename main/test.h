@@ -11,17 +11,29 @@
 #include "async.h"
 #include "debug.h"
 
+#ifdef ARDUINO_AVR_UNO
 #define MAX_PATH_SIZE 16
+#else
+#define MAX_PATH_SIZE 30
+#endif
+
 #define DEBUG_GRID_STRING "\
-........\n\
-........\n\
-...##...\n\
-....#...\n\
-....#...\n\
-....####\n\
-........\n\
-........"
-#define DEBUG_GRID_STRING_SIZE 72
+................\n\
+................\n\
+...##......##...\n\
+....#.......#...\n\
+....#.......#...\n\
+....####....###.\n\
+.......#........\n\
+.......###......\n\
+.........#......\n\
+...##....####...\n\
+....#.......#...\n\
+....#.......#...\n\
+....####....###.\n\
+................\n\
+................"
+#define DEBUG_GRID_STRING_SIZE 255
 
 void test_motors()
 {
@@ -48,12 +60,12 @@ void test_motors()
 
 void test_IDA_star()
 {
-    DEBUG_PRINTLN(F("beginning test"));
+    DEBUG_PRINTLN(F("beginning IDA* test"));
 
     Grid grid;
 
     char grid_string[DEBUG_GRID_STRING_SIZE] = DEBUG_GRID_STRING;
-    char err = grid_init_str(grid_string, &grid);
+    int8_t err = grid_init_str(grid_string, &grid);
     if (err) {
         DEBUG_PRINTLN(F("err"));
         free(grid.obstacles);
@@ -62,9 +74,9 @@ void test_IDA_star()
     grid_print(&grid);
     DEBUG_PRINTLN(F(""));
 
-    uint16_t path[MAX_PATH_SIZE]; // [0, 65535]
+    uint16_t path[MAX_PATH_SIZE];
     uint8_t path_size = 0; // [0, 255]
-    err = grid_find_path_IDA_star(&grid, 7, 63, path, &path_size, MAX_PATH_SIZE);
+    err = grid_find_path_IDA_star(&grid, 15, 82, path, &path_size, MAX_PATH_SIZE);
     switch (err) {
     case 0:
         grid_print_path(&grid, path, path_size);
@@ -91,19 +103,23 @@ void test_IDA_star()
         break;
     case -4:
         DEBUG_PRINTLN(F("Exceeded fCost threshold. Shouldn't be seeing this ever."));
+        break;
+    default:
+        DEBUG_PRINTLN(42);
+        DEBUG_PRINTLN((int)err);
     }
     free(grid.obstacles);
-    DEBUG_PRINTLN(F("Freed"));  
+    DEBUG_PRINTLN(F("Freed!"));
 }
 
 void test_a_star() 
 {
-    DEBUG_PRINTLN(F("beginning test"));
+    DEBUG_PRINTLN(F("beginning A* test"));
 
     Grid grid;
 
     char grid_string[DEBUG_GRID_STRING_SIZE] = DEBUG_GRID_STRING;
-    char err = grid_init_str(grid_string, &grid);
+    int8_t err = grid_init_str(grid_string, &grid);
     if (err) {
         DEBUG_PRINTLN(F("err"));
         free(grid.obstacles);
@@ -114,7 +130,7 @@ void test_a_star()
 
     uint16_t path[MAX_PATH_SIZE]; // [0, 65535]
     uint8_t path_size = 0; // [0, 255]
-    err = grid_find_path_a_star(&grid, 7, 63, path, &path_size, MAX_PATH_SIZE);
+    err = grid_find_path_a_star(&grid, 224, 15, path, &path_size, MAX_PATH_SIZE);
     switch (err) {
     case 0:
         grid_print_path(&grid, path, path_size);
