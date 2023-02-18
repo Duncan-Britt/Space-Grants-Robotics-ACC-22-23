@@ -4,6 +4,13 @@
 #include "async.h"
 #include "debug.h"
 
+#include <Wire.h>
+#include "Adafruit_Sensor.h"
+#include "Adafruit_BNO055.h"
+#include "imumaths.h"
+  
+Adafruit_BNO055 bno = Adafruit_BNO055(55);
+
 /* #include <Wire.h> */
 /* #include <Adafruit_Sensor.h> */
 /* #include <Adafruit_BNO055.h> */
@@ -88,6 +95,7 @@ Vec2D vec2d_final = { .x = 1000, .y = 0 };
 Vec2DQueue position_queue;
 Pose pose_array[2];
 uint8_t idx_pose_array = 0;
+bool bno_connected = false;
 
 bool time_elapsed_ms_50() {
     static uint32_t prev_millis = millis();
@@ -256,13 +264,51 @@ void pose_current_update() {}
 
 void update_sensor_data() 
 {
+    if (bno_connected) {
+        sensors_event_t event_euler; 
+        bno.getEvent(&event_euler);
+        sensors_event_t event_magnet;
+        bno.getEvent(&event_magnet, Adafruit_BNO055::VECTOR_MAGNETOMETER);
+        sensors_event_t event_gyro;
+        bno.getEvent(&event_gyro, Adafruit_BNO055::VECTOR_GYROSCOPE);
+        sensors_event_t event_accel;
+        bno.getEvent(&event_accel, Adafruit_BNO055::VECTOR_ACCELEROMETER);
+      
+        /* Display the floating point data */
+        /* DEBUG_PRINT("Euler X: "); */
+        /* DEBUG_PRINT(event_euler.orientation.x); */
+        /* DEBUG_PRINT("\tMagnet X: "); */
+        /* DEBUG_PRINT(event_magnet.orientation.x); */
+        /* DEBUG_PRINT("\tAccel X: "); */
+        /* DEBUG_PRINT(event_accel.acceleration.x); */
+        /* DEBUG_PRINT("\tAccel Y: "); */
+        /* DEBUG_PRINT(event_accel.acceleration.y); */
+        /* DEBUG_PRINT("\tAccel Z: "); */
+        /* DEBUG_PRINT(event_accel.acceleration.z); */
 
-      if (sensor_IR.distance() < 80) {
-        motors_set_velocity(0);
-      } else {
-        motors_set_velocity(100);
-      }
-      DEBUG_PRINTLN(sensor_IR.distance());
+        DEBUG_PRINT("\tGyro X: ");
+        DEBUG_PRINT(event_gyro.gyro.x);
+        DEBUG_PRINT("\tGyro Y: ");
+        DEBUG_PRINT(event_gyro.gyro.y);
+        DEBUG_PRINT("\tGyro Z: ");
+        DEBUG_PRINT(event_gyro.gyro.z); 
+        
+        /* DEBUG_PRINT("\tatan(y/x): "); */
+        /* DEBUG_PRINT(180.0 * atan2(event_magnet.orientation.y, event_magnet.orientation.x) / PI); */
+    //     DEBUG_PRINT("\tY: ");
+    //     DEBUG_PRINT(event.orientation.y);
+    //     DEBUG_PRINT("\tZ: ");
+    //     DEBUG_PRINT(event.orientation.z);
+        DEBUG_PRINTLN("");
+    }
+
+
+    // if (sensor_IR.distance() < 80) {
+    //   motors_set_velocity(0);
+    // } else {
+    //   motors_set_velocity(100);
+    // }
+    // DEBUG_PRINTLN(sensor_IR.distance());
       
     /* sensors_event_t orientationData , linearAccelData; */
     /* bno.getEvent(&orientationData, Adafruit_BNO055::VECTOR_EULER); */
@@ -354,13 +400,17 @@ void setup()
 {
     DEBUG_BEGIN(9600); // Needed to print to Serial Monitor.
 
-    /* while (!Serial) delay(10);  // wait for serial port to open! */
-  
-    /* if (!bno.begin()) */
-    /* { */
-    /*   DEBUG_PRINTLN("No BNO055 detected"); */
-    /*   while (1); */
-    /* } */
+    /* Initialise the sensor */
+    if(!bno.begin())
+    {
+      /* There was a problem detecting the BNO055 ... check your connections */
+      DEBUG_PRINTLN("Ooops, no BNO055 detected ... Check your wiring or I2C ADDR!");
+      // while(1);
+    }
+    else {
+      bno.setExtCrystalUse(true);
+      bno_connected = true;
+    }
 
     motors_init_pins();
     Pose_enqueue_transition(&pose_current, &vec2d_final, pose_array);
@@ -396,7 +446,7 @@ void setup()
 
     DEBUG_PRINTLN_TRACE(freeRam());
     // test_IDA_star();
-    // test_a_star();
+    test_a_star();
     DEBUG_PRINTLN_TRACE(freeRam());
     // test_motors();
 }
