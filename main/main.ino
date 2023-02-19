@@ -3,11 +3,19 @@
 #include "pose.h"
 #include "async.h"
 #include "debug.h"
+#include "utility.h"
 
-#include <Wire.h>
+#include "Wire.h"
 #include "Adafruit_Sensor.h"
 #include "Adafruit_BNO055.h"
 #include "imumaths.h"
+
+#include "SimpleKalmanFilter.h"
+
+SimpleKalmanFilter kalman_filter_heading(2, 2, 0.01);
+SimpleKalmanFilter kalman_filter_acceleration(2, 2, 0.01);
+
+// ------
   
 Adafruit_BNO055 bno = Adafruit_BNO055(55);
 
@@ -90,12 +98,26 @@ SharpIR sensor_IR = SharpIR(IRPin, MODEL);
 // querry IR sensor data: sensor_IR.distance();
 // -> returns an int type value that is the distance in centimeters from the sensor and the object in front of it.
 
-Pose pose_current = { .translation = { .x = 0, .y = 0 }, .rotation = 0.0 };
-Vec2D vec2d_final = { .x = 1000, .y = 0 };
-Vec2DQueue position_queue;
-Pose pose_array[2];
+Vec2Df final_position = { .x = 1000, .y = 0 };
+Vec2DfQueue position_queue;
+PoseF pose_array[2];
 uint8_t idx_pose_array = 0;
 bool bno_connected = false;
+Vec2Df velocity_current = { .x = 0, .y = 0 };
+PoseF pose_current = { .translation = { .x = 0, .y = 0 }, .rotation = 0.0 };
+
+const float elapsed_s = 0.01;
+
+bool time_elapsed_ms_10() {
+    static uint32_t prev_millis = millis();
+
+    if (millis() - prev_millis >= 10) {
+         prev_millis = millis();
+        return true;
+    }
+
+    return false; 
+}
 
 bool time_elapsed_ms_50() {
     static uint32_t prev_millis = millis();
@@ -124,8 +146,8 @@ bool pose_achieved()
       // We need a way to tell whether the robot has gone far enough in the direction of the last pose
       // without considering whether it ends up close to the desired destination, in case it has veered off course.
       // Vectors a & b describe the position of the robot at the first and second poses.      
-        Vec2D* a = (Vec2D*) pose_array;
-        Vec2D* b = (Vec2D*) (pose_array + 1);
+        Vec2Df* a = (Vec2Df*) pose_array;
+        Vec2Df* b = (Vec2Df*) (pose_array + 1);
       // Imagine a line going from a to b. Now imagine a line perpendicular to that line passing through b, called f(x).
       // We might ask whether the robot and point a are on opposite sides of this line and say that if so, it has gone far enough.
 
@@ -174,15 +196,11 @@ bool position_achieved()
 
 // Tests!
 
-// Get 9DOF working -> Implement PID -> Test with arbitrary paths.
+// Implement PID -> Test with arbitrary paths.
 
 // Consider the case where an obstacle prevents the robot from rotating in place.
        // Back up to a pose in direction of previous position
        // (Remember newfound obstacles)
-
-// Write a function to find the discrepancy between 2 angles in radians. (Consider 2π - 0, and similar. Should be 0 because
-// 2π = 0). Should return a positive or negative number to indicate counter clockwise or clockwise, and the angle discrepancy
-// should always the shortest possible, therefore less than or equal to π radians.
 
 // Figure out how to translate between poses in the global and local reference frame => Given a position (x,y) relative to 
 // the robot and the current pose of the robot in a global coordinate system, (x, y, θ), convert the coordinates of the
@@ -262,6 +280,9 @@ void pose_current_update() {}
 
 /* Adafruit_BNO055 bno = Adafruit_BNO055(55, 0x28); */
 
+/* unsigned long T = millis(); // current time */
+/* float DT; // delay between two updates of the filter */
+
 void update_sensor_data() 
 {
     if (bno_connected) {
@@ -272,34 +293,71 @@ void update_sensor_data()
         sensors_event_t event_gyro;
         bno.getEvent(&event_gyro, Adafruit_BNO055::VECTOR_GYROSCOPE);
         sensors_event_t event_accel;
-        bno.getEvent(&event_accel, Adafruit_BNO055::VECTOR_ACCELEROMETER);
-      
+        bno.getEvent(&event_accel, Adafruit_BNO055::VECTOR_LINEARACCEL);
+
+        /* velocity_current.x += event_accel.acceleration.x > 0 ? 96 * event_accel.acceleration.x : 100 * event_accel.acceleration.x; */
+        /* velocity_current.y += 100 * event_accel.acceleration.y; */
+
+        /* pose_current.translation.x += velocity_current.x; */
+        /* pose_current.translation.y += velocity_current.y; */
+
+        float heading_measured = 180 * atan2(event_magnet.orientation.y, event_magnet.orientation.x) / PI;
+        DEBUG_PRINT("heading: ");
+        DEBUG_PRINT(heading_measured);
+        DEBUG_PRINT("\tk: ");
+        DEBUG_PRINTLN(kalman_filter_heading.updateEstimateAngle(heading_measured));
+
+        // float accel_measured = event_accel.acceleration.x * 100;
+        // DEBUG_PRINT("ax: ");
+        // DEBUG_PRINT(accel_measured);
+        // DEBUG_PRINT("\tkax: ");
+        // float kax = kalman_filter_acceleration.updateEstimate(accel_measured);
+        // DEBUG_PRINT(kax);
+        // DEBUG_PRINT("\tvx: ");
+        // DT = millis() - T;
+        // T = millis();
+        // velocity_current.x += kax * DT;
+        // DEBUG_PRINTLN(velocity_current.x);
+
+
+
         /* Display the floating point data */
-        /* DEBUG_PRINT("Euler X: "); */
-        /* DEBUG_PRINT(event_euler.orientation.x); */
+        // DEBUG_PRINT("Euler X: ");
+        // DEBUG_PRINT(event_euler.orientation.x);
         /* DEBUG_PRINT("\tMagnet X: "); */
         /* DEBUG_PRINT(event_magnet.orientation.x); */
-        /* DEBUG_PRINT("\tAccel X: "); */
-        /* DEBUG_PRINT(event_accel.acceleration.x); */
-        /* DEBUG_PRINT("\tAccel Y: "); */
-        /* DEBUG_PRINT(event_accel.acceleration.y); */
+        /* DEBUG_PRINT("\tAx: "); */
+        /* DEBUG_PRINT(event_accel.acceleration.x * 100); */
+        /* DEBUG_PRINT("\tAy: "); */
+        /* DEBUG_PRINT(event_accel.acceleration.y * 100); */
         /* DEBUG_PRINT("\tAccel Z: "); */
         /* DEBUG_PRINT(event_accel.acceleration.z); */
-
-        DEBUG_PRINT("\tGyro X: ");
-        DEBUG_PRINT(event_gyro.gyro.x);
-        DEBUG_PRINT("\tGyro Y: ");
-        DEBUG_PRINT(event_gyro.gyro.y);
-        DEBUG_PRINT("\tGyro Z: ");
-        DEBUG_PRINT(event_gyro.gyro.z); 
+        /* DEBUG_PRINT("\t Vx: "); */
+        /* DEBUG_PRINT(velocity_current.x); */
+        /* DEBUG_PRINT("\t Vy: "); */
+        /* DEBUG_PRINT(velocity_current.y); */
+        /* DEBUG_PRINT("\t X: "); */
+        /* DEBUG_PRINT(pose_current.translation.x); */
+        /* DEBUG_PRINT("\t Y: "); */
+        /* DEBUG_PRINT(pose_current.translation.y);         */
+        /* DEBUG_PRINT("\tGyro X: "); */
+        /* DEBUG_PRINT(event_gyro.gyro.x); */
+        /* DEBUG_PRINT("\tGyro Y: "); */
+        /* DEBUG_PRINT(event_gyro.gyro.y); */
+        /* DEBUG_PRINT("\tGyro Z: "); */
+        /* DEBUG_PRINT(event_gyro.gyro.z);  */
         
-        /* DEBUG_PRINT("\tatan(y/x): "); */
-        /* DEBUG_PRINT(180.0 * atan2(event_magnet.orientation.y, event_magnet.orientation.x) / PI); */
+        // DEBUG_PRINT("\tatan2(y,x): ");
+        // DEBUG_PRINTLN(180.0 * atan2(event_magnet.orientation.y, event_magnet.orientation.x) / PI);
+
+        /* DEBUG_PRINTLN(diff_angles(350, 10)); */
+        /* DEBUG_PRINTLN(diff_angles(350, 10)); */
+        
     //     DEBUG_PRINT("\tY: ");
     //     DEBUG_PRINT(event.orientation.y);
     //     DEBUG_PRINT("\tZ: ");
     //     DEBUG_PRINT(event.orientation.z);
-        DEBUG_PRINTLN("");
+        /* DEBUG_PRINTLN(""); */
     }
 
 
@@ -341,7 +399,7 @@ void update_sensor_data()
 
 char pid_error_rotational(double rot_current, double rot_desired) {}
 // ^^^ be careful of the difference in rotation (consider that the discrepancy between 7π/4 and 0 should be π/4, not 7π/4).
-char pid_error_translational(Vec2D pos_current, Vec2D pos_desired) {}
+char pid_error_translational(Vec2Df pos_current, Vec2Df pos_desired) {}
 // https://en.wikipedia.org/wiki/PID_controller
 // https://www.youtube.com/watch?v=UR0hOmjaHp0
 // https://www.youtube.com/watch?v=337Sp3PtVDc
@@ -388,21 +446,34 @@ bool time_elapsed_ms_1000()
         return true;
     }
 
-    return false; 
+    return false;
 }
 
-AsyncLoop loop_obstacle;
-AsyncLoop loop_positions;
-AsyncLoop loop_poses;
-AsyncLoop loop_pid;
+/* AsyncLoop loop_obstacle; */
+/* AsyncLoop loop_positions; */
+/* AsyncLoop loop_poses; */
+/* AsyncLoop loop_pid; */
+AsyncLoop loop_pid_heading;
+AsyncLoop loop_path_interrupted;
+
+double heading_current;
+double heading_desired;
+double heading_original;
+
+double heading_discrepancy = 0;
+double heading_discrepancy_delta = 0;
+double heading_discrepancy_sum = 0;
+
+unsigned long initial_time = 0;
+void* path_interruption_sequence[8];
+uint8_t path_interruption_sequence_idx = 0;
 
 void setup() 
 {
     DEBUG_BEGIN(9600); // Needed to print to Serial Monitor.
 
     /* Initialise the sensor */
-    if(!bno.begin())
-    {
+    if(!bno.begin()) {
       /* There was a problem detecting the BNO055 ... check your connections */
       DEBUG_PRINTLN("Ooops, no BNO055 detected ... Check your wiring or I2C ADDR!");
       // while(1);
@@ -410,53 +481,159 @@ void setup()
     else {
       bno.setExtCrystalUse(true);
       bno_connected = true;
+
+      delay(5000);
+      sensors_event_t event_magnet;
+      bno.getEvent(&event_magnet, Adafruit_BNO055::VECTOR_MAGNETOMETER);
+      float heading_measured = 180 * atan2(event_magnet.orientation.y, event_magnet.orientation.x) / PI;
+      heading_current = kalman_filter_heading.updateEstimateAngle(heading_measured);
+      heading_desired = heading_current;
+      heading_original = heading_desired;
     }
-
+    
     motors_init_pins();
-    Pose_enqueue_transition(&pose_current, &vec2d_final, pose_array);
-    DEBUG_PRINTLN(F("\n"));
 
-    loop_obstacle
-        .when((void*)path_interrupted)
-        .then((void*)stop_and_update_obstacles)
-        .when((void*)+[]() -> bool {
-                return idx_pose_array == 1 && pose_achieved();
-            })
-        .then((void*)reroute);
-
-    loop_positions
-        .when((void*)position_achieved)
-        .then((void*)+[]() -> void { // Enqueue poses, dequeue position.
-                if (!(position_queue.empty())) {
-                    Pose_enqueue_transition(&pose_current, position_queue.front(), pose_array);
-                    idx_pose_array = 0;
-                    position_queue.dequeue();
-                }
+    loop_pid_heading
+        .when((void*)time_elapsed_ms_50)
+        .then((void*)+[]() -> void {
+                if (bno_connected) {
+                    sensors_event_t event_magnet;
+                    bno.getEvent(&event_magnet, Adafruit_BNO055::VECTOR_MAGNETOMETER);
+                    float heading_measured = 180 * atan2(event_magnet.orientation.y, event_magnet.orientation.x) / PI;
+                    heading_current = kalman_filter_heading.updateEstimateAngle(heading_measured);                    
+                    double heading_discrepancy_new = diff_anglesf(heading_current, heading_desired);
+                    heading_discrepancy_delta = heading_discrepancy_new - heading_discrepancy;
+                    heading_discrepancy = heading_discrepancy_new;
+                    heading_discrepancy_sum += heading_discrepancy;
+                    int pid_correction = round(1 * heading_discrepancy + 1 * heading_discrepancy_delta + 0.01 * heading_discrepancy_sum);
+                    motors_increment_velocity_left(0 - pid_correction);
+                    motors_increment_velocity_right(pid_correction);
+                }                
             });
 
-    // In between two positions in the position_queue, there are poses
-    // which must be traversed
-    loop_poses // go to second pose when first is achieved
-        .when((void*)pose_achieved)
-        .then((void*)+[]() -> void { idx_pose_array = 1; });
-    
-    loop_pid
-        .when((void*)time_elapsed_ms_50)
-        .then((void*)update_perception_localize_and_pid);
+    // When an object is within 60 cm,
+    path_interruption_sequence[0] = (void*)+[]() -> bool {
+        return sensor_IR.distance() < 60;
+    };
+    // then stop and then set the desired heading to be 90 degrees to the right.
+    // (The robot will begin to turn right).
+    path_interruption_sequence[1] = (void*)+[]() -> void {
+        motors_set_velocity(0);
+        heading_desired = heading_desired + 90.0;
+    };
+    // When the robot has completed its turn,
+    path_interruption_sequence[2] = (void*)+[]() -> bool {
+        return diff_anglesf(heading_desired, heading_current) < 5.0;
+    };
+    // then go forth.
+    path_interruption_sequence[3] = (void*)+[]() -> void {
+        motors_set_velocity(50);
+        initial_time = millis();
+    };
+    // If an obstacle is detected, go to the beginning of the sequence.
+    // When the 4 seconds has passed, 
+    path_interruption_sequence[4] = (void*)+[]() -> bool {
+        if (sensor_IR.distance() < 60) {
+            path_interruption_sequence_idx = 0;            
+            return false;
+        }
+        
+        return millis() - initial_time > 4000;
+    };
+    // then stop and set the desired heading to be toward the original heading.
+    path_interruption_sequence[5] = (void*)+[]() -> void {
+        motors_set_velocity(0);
+        heading_desired = heading_original;
+    };
+    // When the robot has completed its turn,
+    path_interruption_sequence[6] = (void*)+[]() -> bool {
+        return diff_anglesf(heading_desired, heading_current) < 5.0;
+    };
+    // then go forth.
+    path_interruption_sequence[7] = (void*)+[]() -> void {
+        motors_set_velocity(50);
+    };
 
-    DEBUG_PRINTLN_TRACE(freeRam());
-    // test_IDA_star();
-    test_a_star();
-    DEBUG_PRINTLN_TRACE(freeRam());
-    // test_motors();
+    motors_set_velocity(50);
+    
+    /* loop_path_interrupted */
+    /*     .when((void*)+[]() -> bool { */
+    /*             return sensor_IR.distance() < 60; */
+    /*         }).then((void*)+[]() -> void { */
+    /*                 motors_set_velocity(0); */
+    /*                 heading_desired = heading_desired + 90.0; */
+    /*             }).when((void*)+[]() -> bool { */
+    /*                     return diff_anglesf(heading_desired, heading_current) < 5.0; */
+    /*                 }).then((void*)+[]() -> void { */
+    /*                         motors_set_velocity(50); */
+    /*                         initial_time = millis(); */
+    /*                     }).when((void*)+[]() -> bool { */
+    /*                             // what if we run into an obstacle at this point? */
+    /*                             // if sensor_ir.distance() < 60, go to first then(); */
+    /*                             return millis() - initial_time > 4000; */
+    /*                         }).then((void*)+[]() -> void { */
+    /*                                 motors_set_velocity(0); */
+    /*                                 heading_desired = heading_original; */
+    /*                             }).when((void*)+[]() -> bool { */
+    /*                                     return diff_anglesf(heading_desired, heading_current) < 5.0; */
+    /*                                 }).then((void*)+[]() -> void { */
+    /*                                         motors_set_velocity(50); */
+    /*                                     }); */
+
+        
+    /* PoseF_enqueue_transition(&pose_current, &final_position, pose_array); */
+    /* DEBUG_PRINTLN(F("\n")); */
+
+    /* loop_obstacle */
+    /*     .when((void*)path_interrupted) */
+    /*     .then((void*)stop_and_update_obstacles) */
+    /*     .when((void*)+[]() -> bool { */
+    /*             return idx_pose_array == 1 && pose_achieved(); */
+    /*         }) */
+    /*     .then((void*)reroute); */
+
+    /* loop_positions */
+    /*     .when((void*)position_achieved) */
+    /*     .then((void*)+[]() -> void { // Enqueue poses, dequeue position. */
+    /*             if (!(position_queue.empty())) { */
+    /*                 PoseF_enqueue_transition(&pose_current, position_queue.front(), pose_array); */
+    /*                 idx_pose_array = 0; */
+    /*                 position_queue.dequeue(); */
+    /*             } */
+    /*         }); */
+
+    /* // In between two positions in the position_queue, there are poses */
+    /* // which must be traversed */
+    /* loop_poses // go to second pose when first is achieved */
+    /*     .when((void*)pose_achieved) */
+    /*     .then((void*)+[]() -> void { idx_pose_array = 1; }); */
+    
+    /* loop_pid */
+    /*     .when((void*)time_elapsed_ms_50) */
+    /*     .then((void*)update_perception_localize_and_pid); */
+
+    /* DEBUG_PRINTLN_TRACE(freeRam()); */
+    /* // test_IDA_star(); */
+    /* test_a_star(); */
+    /* DEBUG_PRINTLN_TRACE(freeRam()); */
+    /* // test_motors(); */
 }
 
-void loop() 
+void loop()
 {
-    loop_obstacle();
-    loop_positions();
-    loop_poses();
-    loop_pid();
+    loop_pid_heading();
+    uint8_t idx = path_interruption_sequence_idx;
+    if (idx % 2 == 0) {
+        if ( ((bool (*)())(path_interruption_sequence[idx]))() ) {
+            ((void (*)())(path_interruption_sequence[idx + 1]))();
+            path_interruption_sequence_idx = (idx + 2) % 8;
+        }           
+    }
+    
+    /* loop_obstacle(); */
+    /* loop_positions(); */
+    /* loop_poses(); */
+    /* loop_pid(); */
 }
 
 NON_ARDUINO_MAIN
