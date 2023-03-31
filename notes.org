@@ -353,3 +353,8 @@ Beware of multiple libraries using the same timer: https://youtu.be/lOTDSQua--s?
 #+end_src
 
 Servo Control & Ultrasonic Sensor Demo [[https://www.youtube.com/watch?v=lOTDSQua--s&list=PL0_aoTs5sGaQFjNSnyjTT8aiXWuILTouE&index=5]]
+
+
+* notes:
+chunk the samples of imu, sample at max rate
+

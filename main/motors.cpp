@@ -5,12 +5,12 @@
 // _|_ | \| | |_ | \ | \| /--\ |_
 
 static const byte pin_left_fw = 8; // in1
-static const byte pin_left_bw = 7; // in2
-static const byte pin_left_speed = 9; // enA
+static const byte pin_left_bw = 7; // in2 
+static const byte pin_left_speed = A9; // enA
 
 static const byte pin_right_fw = 4; // in4
 static const byte pin_right_bw = 5; // in3
-static const byte pin_right_speed = 3; // enB
+static const byte pin_right_speed = A8; // enB // was 3
 
 static char current_velocity_left = 0;
 static char current_velocity_right = 0;

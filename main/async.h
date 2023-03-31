@@ -52,6 +52,7 @@
 // }
 //
 // etc...
+typedef bool (*Predicate)();
 
 class AsyncLoop {
  public:
@@ -79,7 +80,7 @@ class AsyncLoop {
     static const uint8_t capacity = 5; // so far the max used is 2 as of 1/2/2023
     uint8_t b = 0;
     uint8_t e = 0;
-    void* listeners[capacity];
+    void* listeners[capacity]; // change this to Predicate
     void* handlers[capacity];
 };
 

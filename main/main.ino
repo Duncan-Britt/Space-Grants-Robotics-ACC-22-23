@@ -497,10 +497,12 @@ void setup()
         .when((void*)time_elapsed_ms_50)
         .then((void*)+[]() -> void {
                 if (bno_connected) {
+                    // ask how much time actually passed, independant of when clause
                     sensors_event_t event_magnet;
                     bno.getEvent(&event_magnet, Adafruit_BNO055::VECTOR_MAGNETOMETER);
                     float heading_measured = 180 * atan2(event_magnet.orientation.y, event_magnet.orientation.x) / PI;
-                    heading_current = kalman_filter_heading.updateEstimateAngle(heading_measured);                    
+                    heading_current = kalman_filter_heading.updateEstimateAngle(heading_measured);  
+                    DEBUG_PRINTLN(heading_current);                  
                     double heading_discrepancy_new = diff_anglesf(heading_current, heading_desired);
                     heading_discrepancy_delta = heading_discrepancy_new - heading_discrepancy;
                     heading_discrepancy = heading_discrepancy_new;
@@ -511,75 +513,53 @@ void setup()
                 }                
             });
 
-    // When an object is within 60 cm,
-    path_interruption_sequence[0] = (void*)+[]() -> bool {
-        return sensor_IR.distance() < 60;
-    };
-    // then stop and then set the desired heading to be 90 degrees to the right.
-    // (The robot will begin to turn right).
-    path_interruption_sequence[1] = (void*)+[]() -> void {
-        motors_set_velocity(0);
-        heading_desired = heading_desired + 90.0;
-    };
-    // When the robot has completed its turn,
-    path_interruption_sequence[2] = (void*)+[]() -> bool {
-        return diff_anglesf(heading_desired, heading_current) < 5.0;
-    };
-    // then go forth.
-    path_interruption_sequence[3] = (void*)+[]() -> void {
-        motors_set_velocity(50);
-        initial_time = millis();
-    };
-    // If an obstacle is detected, go to the beginning of the sequence.
-    // When the 4 seconds has passed, 
-    path_interruption_sequence[4] = (void*)+[]() -> bool {
+    path_interruption_sequence[0] = (void*)+[]() -> void {
+        // When an object is within 60 cm,
         if (sensor_IR.distance() < 60) {
-            path_interruption_sequence_idx = 0;            
-            return false;
+            // then stop and then set the desired heading to be 90 degrees to the right.
+            // (The robot will begin to turn right).
+            motors_set_velocity(0);
+            heading_desired = heading_desired + 90.0;
+            // change index!
+            path_interruption_sequence_idx = 1;
         }
-        
-        return millis() - initial_time > 4000;
-    };
-    // then stop and set the desired heading to be toward the original heading.
-    path_interruption_sequence[5] = (void*)+[]() -> void {
-        motors_set_velocity(0);
-        heading_desired = heading_original;
-    };
-    // When the robot has completed its turn,
-    path_interruption_sequence[6] = (void*)+[]() -> bool {
-        return diff_anglesf(heading_desired, heading_current) < 5.0;
-    };
-    // then go forth.
-    path_interruption_sequence[7] = (void*)+[]() -> void {
-        motors_set_velocity(50);
     };
 
-    motors_set_velocity(50);
-    
-    /* loop_path_interrupted */
-    /*     .when((void*)+[]() -> bool { */
-    /*             return sensor_IR.distance() < 60; */
-    /*         }).then((void*)+[]() -> void { */
-    /*                 motors_set_velocity(0); */
-    /*                 heading_desired = heading_desired + 90.0; */
-    /*             }).when((void*)+[]() -> bool { */
-    /*                     return diff_anglesf(heading_desired, heading_current) < 5.0; */
-    /*                 }).then((void*)+[]() -> void { */
-    /*                         motors_set_velocity(50); */
-    /*                         initial_time = millis(); */
-    /*                     }).when((void*)+[]() -> bool { */
-    /*                             // what if we run into an obstacle at this point? */
-    /*                             // if sensor_ir.distance() < 60, go to first then(); */
-    /*                             return millis() - initial_time > 4000; */
-    /*                         }).then((void*)+[]() -> void { */
-    /*                                 motors_set_velocity(0); */
-    /*                                 heading_desired = heading_original; */
-    /*                             }).when((void*)+[]() -> bool { */
-    /*                                     return diff_anglesf(heading_desired, heading_current) < 5.0; */
-    /*                                 }).then((void*)+[]() -> void { */
-    /*                                         motors_set_velocity(50); */
-    /*                                     }); */
+    path_interruption_sequence[1] = (void*)+[]() -> void {
+        // When the robot has completed its turn,
+        if (diff_anglesf(heading_desired, heading_current) < 5.0) {
+            // then go forth.
+            motors_set_velocity(50);
+            initial_time = millis();
 
+            path_interruption_sequence_idx = 2;
+        }        
+    };
+   
+    path_interruption_sequence[2] = (void*)+[]() -> void {
+        // If an obstacle is detected, go to the beginning of the sequence.
+        if (sensor_IR.distance() < 60) {
+            path_interruption_sequence_idx = 0;
+        }
+        // When the 4 seconds has passed,
+        if (millis() - initial_time > 4000) {
+            // then stop and set the desired heading to be toward the original heading.
+            motors_set_velocity(0);
+            heading_desired = heading_original;
+            path_interruption_sequence_idx = 3;
+        }
+    };
+
+    path_interruption_sequence[3] = (void*)+[]() -> void {
+        // When the robot has completed its turn,
+        if (diff_anglesf(heading_desired, heading_current) < 5.0) {
+            // then go forth
+            motors_set_velocity(50);
+            path_interruption_sequence_idx = 0;
+        }
+    };
+
+    // motors_set_velocity(50);
         
     /* PoseF_enqueue_transition(&pose_current, &final_position, pose_array); */
     /* DEBUG_PRINTLN(F("\n")); */
@@ -617,18 +597,13 @@ void setup()
     /* test_a_star(); */
     /* DEBUG_PRINTLN_TRACE(freeRam()); */
     /* // test_motors(); */
+    motors_set_velocity(50);
 }
 
 void loop()
 {
-    loop_pid_heading();
-    uint8_t idx = path_interruption_sequence_idx;
-    if (idx % 2 == 0) {
-        if ( ((bool (*)())(path_interruption_sequence[idx]))() ) {
-            ((void (*)())(path_interruption_sequence[idx + 1]))();
-            path_interruption_sequence_idx = (idx + 2) % 8;
-        }           
-    }
+    // loop_pid_heading();
+    // ((void (*)())(path_interruption_sequence[path_interruption_sequence_idx]))();
     
     /* loop_obstacle(); */
     /* loop_positions(); */
