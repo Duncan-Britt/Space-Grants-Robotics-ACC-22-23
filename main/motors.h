@@ -7,8 +7,8 @@
 void motors_init_pins();
 
 // Increment (or decrement if argument is negative) the speed of the motors.
-void motors_increment_velocity_left(const char increment);
-void motors_increment_velocity_right(const char increment);
+void motors_increment_velocity_left(const int increment);
+void motors_increment_velocity_right(const int increment);
 
 // The following functions can be used to control the velocity of the wheels.
 // They accept an integer in the range [-100, 100]. Negative values are used to
@@ -29,8 +29,8 @@ void motors_increment_velocity_right(const char increment);
 // Turning Right at 80% of max speed:
 //     motors_set_velocity_left(80);
 //     motors_set_velocity_right(-80); 
-void motors_set_velocity_left(char velocity);
-void motors_set_velocity_right(char velocity);
-void motors_set_velocity(const char velocity);
+void motors_set_velocity_left(int velocity);
+void motors_set_velocity_right(int velocity);
+void motors_set_velocity(const int velocity);
 
 #endif

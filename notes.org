@@ -357,4 +357,7 @@ Servo Control & Ultrasonic Sensor Demo [[https://www.youtube.com/watch?v=lOTDSQu
 
 * notes:
 chunk the samples of imu, sample at max rate
+* TODOS March 31 2023
 
+** The Motors don't have speed control.
+It's binary, on or off. This is a problem for course correction.
