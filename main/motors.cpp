@@ -12,14 +12,14 @@ static const byte pin_right_fw = 3; // in4
 static const byte pin_right_bw = 5; // in3
 static const byte pin_right_speed = 11; // enB
 
-static char current_velocity_left = 0;
-static char current_velocity_right = 0;
+static int current_velocity_left = 0;
+static int current_velocity_right = 0;
 
 // Maps values in range [0, 100] to [min_movement, max_voltage].
 int voltage_of_speed(const int speed)
 {
-    const byte min_movement_voltage = 100; // TBD experimentally
-    const byte max_voltage = 255; // Max Analogue Pin Output
+    const int min_movement_voltage = 200; // TBD experimentally
+    const int max_voltage = 255; // Max Analogue Pin Output
     
     return (speed * (max_voltage - min_movement_voltage)) / 100 + min_movement_voltage;
 }
@@ -63,8 +63,7 @@ void motors_increment_velocity_right(const int increment)
 void motors_set_velocity_right(int velocity)
 {
     velocity = normalize(velocity);
-    DEBUG_PRINTLN((int)velocity);
-    DEBUG_PRINTLN("Before if statement");
+    DEBUG_PRINTLN("right_speed: " + String(velocity));
     
     if ((int)velocity == 0) {
         digitalWrite(pin_right_fw, LOW);
@@ -74,12 +73,12 @@ void motors_set_velocity_right(int velocity)
     else if ((int)velocity > 0) {
         digitalWrite(pin_right_fw, HIGH);
         digitalWrite(pin_right_bw, LOW);
-        analogWrite(pin_right_speed, voltage_of_speed((byte)abs(velocity)));
+        analogWrite(pin_right_speed, voltage_of_speed(abs(velocity)));
     } else {
         DEBUG_PRINTLN("I'm here!");
         digitalWrite(pin_right_fw, LOW);
         digitalWrite(pin_right_bw, HIGH);
-        analogWrite(pin_right_speed, voltage_of_speed((byte)abs(velocity)));
+        analogWrite(pin_right_speed, voltage_of_speed(abs(velocity)));
     }
 
     current_velocity_right = velocity;
@@ -88,6 +87,7 @@ void motors_set_velocity_right(int velocity)
 void motors_set_velocity_left(int velocity)
 {
     velocity = normalize(velocity);
+    DEBUG_PRINTLN("left_speed: " + String(velocity));
     
     if (velocity == 0) {
         digitalWrite(pin_left_fw, LOW);
