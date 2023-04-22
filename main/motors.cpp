@@ -18,7 +18,7 @@ static int current_velocity_right = 0;
 // Maps values in range [0, 100] to [min_movement, max_voltage].
 int voltage_of_speed(const int speed)
 {
-    const int min_movement_voltage = 200; // TBD experimentally
+    const int min_movement_voltage = 100; // TBD experimentally
     const int max_voltage = 255; // Max Analogue Pin Output
     
     return (speed * (max_voltage - min_movement_voltage)) / 100 + min_movement_voltage;
